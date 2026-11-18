@@ -676,6 +676,10 @@ body.guiding .wrap > .grid, body.guiding #footer { visibility: hidden; }
 
 .cardtot { display: flex; flex-direction: column; gap: 2px; }
 .cardtot .nowlbl { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: none; }
+.cardtot .rankline { font-size: 11.5px; color: var(--muted); }
+.nearnote { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.nearnote .rk { font: inherit; font-weight: 600; }
+.tophead .toproles { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
 .cardtot-n { display: flex; align-items: center; gap: 8px; }
 .cardtot .nowbig { font-size: 30px; }
 
@@ -3599,6 +3603,9 @@ function evaluateCurrent() {
 }
 
 let topNow = [];
+let cardRole = new Map(); // card -> 'cheap' | 'rec' | 'up' | 'alt1' | 'alt2'
+let nearSkipped = []; // near-copies of the cheapest left out of the cards
+const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
 let lastRender = [];
 let curNow = null; // what the current cover costs, for savings on each card
 // What's still missing from a started-but-unfinished existing cover (empty when complete or not started).
@@ -3761,6 +3768,11 @@ function render(list, anyMap, netMap, data, current) {
   // cards in price order, so an upgrade that ranks #2 sits second rather than always third
   top.sort((a, b) => list.indexOf(a) - list.indexOf(b));
   topNow = top;
+  // each card's job: cheapest, best value, upgrade, or the cheapest genuinely different alternatives
+  cardRole = new Map();
+  { let alt = 0; for (const r of top) cardRole.set(r, r === list[0] ? 'cheap' : recPick && r === recPick.r ? 'rec' : upPick && r === upPick.r ? 'up' : ++alt === 1 ? 'alt1' : 'alt2'); }
+  // options skipped as near-copies of the cheapest (same cover, one policy different, a few dollars apart)
+  nearSkipped = list.slice(1, Math.max(...top.map((r) => list.indexOf(r)))).filter((r) => !top.includes(r) && nearCopy(r, list[0]));
   const rowsShown = { amb2: top.some((r) => r.ambAddOn), excess: top.some((r) => r.hospital?.excess || r.hospital?.copay), amb: top.some((r) => r.ambulance || r.ambAddOn), mls: top.some((r) => r.mls), baby: top.some((r) => r.babyUpgrade) };
   factKeys = null;
   {
@@ -3771,7 +3783,10 @@ function render(list, anyMap, netMap, data, current) {
   const warns = top.map((r) => (r.split ? splitWarning(r) : ''));
   sharedWarn = warns.length > 1 && warns.every((w) => w && w === warns[0]) ? warns[0] : '';
   if (sharedWarn) parts.push(`<div class="notice">${sharedWarn.replace(/^<p[^>]*>|<\/p>$/g, '')}</div>`);
-  parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? ' Savings are against your existing cover.' : ''}</p></div>`);
+  const roleWords = { cheap: 'the cheapest', rec: 'our best-value pick', up: 'an upgrade that still costs less than you pay now', alt1: 'the cheapest real alternative', alt2: 'the next alternative' };
+  const roles = top.map((r) => roleWords[cardRole.get(r)]).filter(Boolean);
+  const rolesTxt = roles.length > 1 ? `${roles.slice(0, -1).join(', ')} and ${roles[roles.length - 1]}` : roles[0] || '';
+  parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p class="toproles">${rolesTxt ? `${cap1(rolesTxt)}.` : ''}</p><p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? ' Savings are against your existing cover.' : ''}</p></div>`);
   const scens = SCENARIOS.filter((x) => (x.usage && S.want !== 'H') || (x.stay && S.want !== 'E'));
   const on = new Set(S.scen || []);
   parts.push(`<div class="scenbar" role="group" aria-label="What if"><span class="scenlbl">What if, on top of what you entered, you had…</span>${scens.map((x) => `<button type="button" class="scenbub" data-scen="${x.id}" aria-pressed="${on.has(x.id)}" title="${esc(x.desc)}">${esc(x.label)}</button>`).join('')}${on.size ? '<button type="button" class="textbtn" data-scen="">Clear</button>' : ''}</div>
@@ -3877,11 +3892,11 @@ function render(list, anyMap, netMap, data, current) {
     if (sa) sa.addEventListener('click', () => setKeepAns('no'));
   });
 
-  const rest = list.slice(3, 20);
+  const rest = list.filter((r) => !topNow.includes(r)).slice(0, 17);
   if (rest.length) {
-    parts.push(`<section class="panel rest-panel"><details class="restdet" open><summary><h2 class="ph">Next best <span class="hint">Options #4 to #${rest.length + 3}</span></h2></summary><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Hover over a gap payment figure to see what the fund pays.</p><div class="table-wrap"><table class="rest">
+    parts.push(`<section class="panel rest-panel"><details class="restdet" open><summary><h2 class="ph">Next best <span class="hint">Options #${list.indexOf(rest[0]) + 1} to #${list.indexOf(rest[rest.length - 1]) + 1}, apart from the cards above</span></h2></summary><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Hover over a gap payment figure to see what the fund pays.</p><div class="table-wrap"><table class="rest">
       <thead><tr><th>Compare</th><th>Option</th><th>Policy</th><th class="n" title="What you'd pay the fund in a year, after your rebate">Premiums</th><th class="n" title="What you'd still pay yourself in a year: gaps on your services after the fund's benefits, plus any excess">Gap payments</th><th class="n" title="Premiums plus what you'd still pay yourself for services (and any excess)">Total</th></tr></thead>
-      <tbody>${rest.map((r, i) => `<tr data-rank="${i + 4}"><td>${pickBox(r, true)}</td><td>${i + 4}</td><td>${restName(r)}</td>
+      <tbody>${rest.map((r) => `<tr data-rank="${list.indexOf(r) + 1}"><td>${pickBox(r, true)}</td><td>${list.indexOf(r) + 1}</td><td>${restName(r)}</td>
         <td class="n" data-l="Premiums">${fmt(r.premium.net)}</td><td class="n" data-l="Gap payments"${r.extras?.totalFees ? ` title="The fund pays ${fmt(r.extras.totalBenefit || 0)} of your ${fmt(r.extras.totalFees)} in services"` : ''}>${fmt(Math.max(0, r.total - r.premium.net))}</td><td class="n" data-l="Total"><b>${fmt(r.total)}</b></td></tr>`).join('')}</tbody></table></div></details></section>`);
   }
   $('results').innerHTML = parts.join('');
@@ -3936,8 +3951,9 @@ function card(r, i, anyMap, netMap, rowsShown = {}) {
   const vsSelf = vsSelfOf(r);
   return `<article class="panel card ${i === 0 ? 'first' : ''}">
     ${cardBadges(r).top}
-    <div class="head"><span class="rank">${(lastList.indexOf(r) + 1) || i + 1}</span><div><div class="fund">${r.split ? 'Two separate policies' : r.mixed ? 'Two policies · 2 funds' : 'One policy'}</div>${r.split ? splitBlocks(r) : oneBlock(r)}</div></div>
+    <div class="head"><div><div class="fund">${r.split ? 'Two separate policies' : r.mixed ? 'Two policies · 2 funds' : 'One policy'}</div>${r.split ? splitBlocks(r) : oneBlock(r)}</div></div>
     ${cardBadges(r).why}
+    ${r === lastList[0] && nearSkipped.length ? `<p class="nearnote">${nearNote()}</p>` : ''}
     <div class="price">
     <div class="whyline">${whyLine(r, topNow)}</div>
     ${cardFacts(r, other, vsSelf)}</div>
@@ -6602,6 +6618,15 @@ function pickRecommended(list) {
   }
   return pick;
 }
+// "Options #2–#5 are near-copies of this one…" (ranges joined, each number a link to its row)
+function nearNote() {
+  const ns = nearSkipped.map((r) => lastList.indexOf(r) + 1).sort((a, b) => a - b);
+  const runs = [];
+  for (const n of ns) { const last = runs[runs.length - 1]; if (last && n === last[1] + 1) last[1] = n; else runs.push([n, n]); }
+  const txt = runs.map(([a, b]) => (a === b ? `#${a}` : b === a + 1 ? `#${a} and #${b}` : `#${a}–#${b}`)).join(', ').replace(/, ([^,]*)$/, ' and $1');
+  const gap = Math.max(...nearSkipped.map((r) => r.total - lastList[0].total));
+  return rankLinks(`Option${ns.length === 1 ? '' : 's'} ${txt} ${ns.length === 1 ? 'is a near-copy' : 'are near-copies'} of this one: one policy different, within ${fmt(Math.max(1, gap))} a year. ${ns.length === 1 ? "It's" : "They're"} in the list below.`);
+}
 // Two options that are practically the same choice: within $40 a year, the same hospital tiers,
 // and all but one of the same policies (e.g. only the partner's basic policy differs).
 function nearCopy(a, b) {
@@ -6646,15 +6671,15 @@ function cardBadges(r) {
   if (curR && curR.products.length && r === list[0] && isUpgradeOn(r, curR)) b.push('<span class="badge upmini">Also an upgrade on your cover</span>');
   // badges and the saving at the top; the reasons go below the policy boxes
   // badges, then the year's total (breakdown behind the "i"), then the saving
-  const tot = `<div class="cardtot"><span class="nowlbl">Total cash you would outlay for the year</span><span class="cardtot-n"><b class="nowbig">${fmt(r.total)}</b>${outlayInfo(r)}</span>${!curNow && yr1(r) ? `<span class="yr1">Year 1: ${fmt(yr1(r))} (waiting periods)</span>` : ''}</div>`;
+  const tot = `<div class="cardtot"><span class="nowlbl">Total cash you would outlay for the year</span><span class="cardtot-n"><b class="nowbig">${fmt(r.total)}</b>${outlayInfo(r)}</span><span class="rankline">Option #${list.indexOf(r) + 1} · ${list.indexOf(r) ? `${ordinal(list.indexOf(r) + 1)} cheapest` : 'cheapest'} of ${list.length.toLocaleString('en-AU')}</span>${!curNow && yr1(r) ? `<span class="yr1">Year 1: ${fmt(yr1(r))} (waiting periods)</span>` : ''}</div>`;
   // with existing cover, the saving leads and the total sits under it, smaller
   const sb = saveBadge(r);
   const top = (x) => `<div class="cardtop${sb ? ' savefirst' : ''}"><div class="badges">${x.join('')}</div>${sb ? sb + tot : tot}</div>`;
-  // no other badge: say where it sits on price (gold, silver, bronze for the three cheapest)
+  // no other badge: it's here as the cheapest genuinely different alternative (silver), or the next one (bronze)
   if (!b.length) {
-    const n = list.indexOf(r) + 1;
-    const ord = `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
-    return { top: top([`<span class="badge rankb${n === 2 ? ' silver' : n === 3 ? ' bronze' : ''}">${ord} cheapest</span>`]), why: '<div class="cardwhy"></div>' };
+    const role = cardRole.get(r);
+    const label = role === 'alt1' ? 'Cheapest alternative' : role === 'alt2' ? 'Next alternative' : `${ordinal(list.indexOf(r) + 1)} cheapest`;
+    return { top: top([`<span class="badge rankb${role === 'alt1' ? ' silver' : role === 'alt2' ? ' bronze' : ''}">${label}</span>`]), why: '<div class="cardwhy"></div>' };
   }
   let why = '';
   if (upPick && r === upPick.r && !(recPick && r === recPick.r)) {
