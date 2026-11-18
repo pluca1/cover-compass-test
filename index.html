@@ -6082,8 +6082,9 @@ const GUIDE_STEPS = [
       <div class="grow"><div class="gfield"><label class="glbl" for="gAge${i}">Age</label><input class="gnum" type="number" id="gAge${i}" min="18" max="110" value="${S.blank?.[`age${i}`] ? '' : S.ages[i] || ''}" placeholder="e.g. 40"></div>
       <div class="gfield grow1"><span class="glbl">Gender</span><div class="gpills" data-g="${i}">${[['F', 'Female'], ['M', 'Male']].map(([v, l]) => gPill(v, l, !S.blank?.[`g${i}`] && (S.gender?.[i] || '') === v)).join('')}</div></div></div></div>`).join(''),
     bind: (el) => {
-      for (const i of [0, 1]) { const a = el.querySelector(`#gAge${i}`); if (a) a.addEventListener('input', () => { if (a.value) gSet(`age${i}`, a.value, 'input'); }); }
-      for (const box of el.querySelectorAll('[data-g]')) box.addEventListener('click', (e) => { const b = e.target.closest('.gpill'); if (!b) return; gSet(`g${box.dataset.g}`, b.dataset.v); gPick(box, b); if (gAdults().every((i) => !S.blank?.[`g${i}`])) gAuto('people'); });
+      for (const i of [0, 1]) { const a = el.querySelector(`#gAge${i}`); if (a) a.addEventListener('input', () => { G.ans[`ageTyped${i}`] = true; if (a.value) gSet(`age${i}`, a.value, 'input'); }); }
+      for (const box of el.querySelectorAll('[data-g]')) box.addEventListener('click', (e) => { const b = e.target.closest('.gpill'); if (!b) return; gSet(`g${box.dataset.g}`, b.dataset.v); gPick(box, b); // move on only once everyone's age has been entered as well (ages start at 35, so a gender tap alone shouldn't skip past them)
+        if (gAdults().every((i) => !S.blank?.[`g${i}`] && G.ans[`ageTyped${i}`])) gAuto('people'); });
     },
   },
   {
