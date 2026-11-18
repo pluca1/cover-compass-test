@@ -3844,7 +3844,7 @@ function render(list, anyMap, netMap, data, current) {
   const warns = top.map((r) => (r.split ? splitWarning(r) : ''));
   sharedWarn = warns.length > 1 && warns.every((w) => w && w === warns[0]) ? warns[0] : '';
   if (sharedWarn) parts.push(`<div class="notice">${sharedWarn.replace(/^<p[^>]*>|<\/p>$/g, '')}</div>`);
-  const roleWords = { cheap: 'the cheapest', rec: 'our best-value pick', up: 'an upgrade that still costs less than you pay now', alt1: 'the cheapest real alternative', alt2: 'the next alternative' };
+  const roleWords = { cheap: 'the cheapest', rec: 'our best-value pick', up: 'an upgrade that still costs less than you pay now', alt1: 'the runner-up (the cheapest genuinely different option)', alt2: 'the 2nd runner-up' };
   const roles = top.map((r) => roleWords[cardRole.get(r)]).filter(Boolean);
   const rolesTxt = roles.length > 1 ? `${roles.slice(0, -1).join(', ')} and ${roles[roles.length - 1]}` : roles[0] || '';
   parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p class="toproles">${rolesTxt ? `${cap1(rolesTxt)}.` : ''}</p>${rankY1Offered ? `<div class="rankon"><span>${rankY1 ? '<b>Ranked on your first year:</b> waiting periods mean some of the services you entered won’t be paid by a new policy this year.' : '<b>Ranked from year 2:</b> as if waiting periods were already served.'}</span><span class="seg" role="group" aria-label="Rank on"><button type="button" data-rankon="y1" aria-pressed="${rankY1}">Year 1</button><button type="button" data-rankon="ongoing" aria-pressed="${!rankY1}">From year 2</button></span></div>` : ''}<p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? ' Savings are against your existing cover.' : ''}</p></div>`);
@@ -6861,9 +6861,8 @@ function cardBadges(r) {
   // no other badge: it's here as the cheapest genuinely different alternative (silver), or the next one (bronze)
   if (!b.length) {
     const role = cardRole.get(r);
-    // every option cheaper than this card is another card or a near-copy of one, so it's the k-th cheapest real choice
-    const k = topNow.filter((x) => list.indexOf(x) < list.indexOf(r)).length + 1;
-    const label = role === 'alt1' || role === 'alt2' ? `${ordinal(k)} cheapest choice` : `${ordinal(list.indexOf(r) + 1)} cheapest`;
+    // the cheapest genuinely different option (near-copies of the other cards skipped), then the next one
+    const label = role === 'alt1' ? 'Runner-up' : role === 'alt2' ? '2nd runner-up' : `${ordinal(list.indexOf(r) + 1)} cheapest`;
     const reason = role === 'alt1' || role === 'alt2' ? altWhy(r) : '';
     return { top: top([`<span class="badge rankb${role === 'alt1' ? ' silver' : role === 'alt2' ? ' bronze' : ''}">${label}</span>`]), why: `<div class="cardwhy">${reason ? `<p class="altwhy ${role === 'alt1' ? 'silver' : 'bronze'}"><b>Why it's here:</b> ${reason}</p>` : ''}</div>` };
   }
