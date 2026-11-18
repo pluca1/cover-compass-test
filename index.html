@@ -854,6 +854,7 @@ tr.hgrp td { vertical-align: top; }
 .restdet > summary::-webkit-details-marker { display: none; }
 .restdet > summary .ph::before { content: '▸ '; color: var(--accent); }
 .restdet[open] > summary .ph::before { content: '▾ '; }
+table.rest .fundpays { display: block; font-size: 11px; color: var(--muted); font-weight: 400; white-space: nowrap; }
 .restsort { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 4px 16px 8px; }
 .restsort .seg { flex: 0 0 auto; display: inline-flex; padding: 0; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); gap: 0; }
 .restsort .seg button { flex: 0 0 auto; padding: 5px 12px; border-radius: 0; font-size: 12.5px; box-shadow: none; }
@@ -1461,7 +1462,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
       <div class="sec" id="extras-sec">
         <h2>Extras you expect to use this year</h2>
         <div class="example" id="example" hidden>
-          <span>Filled with an example: 2 check-ups, 2 scale &amp; cleans, 1 crown, 1 initial + 3 follow-up physio.</span>
+          <span>Filled with what the average insured person claims in a year: a check-up, scale &amp; clean, fluoride and X-ray, one physio and one chiro visit.</span>
           <button type="button" id="clear">Start blank</button>
         </div>
         <div class="people-bar"><div class="people" id="people" role="group" aria-label="Who is using services"></div>
@@ -2718,7 +2719,8 @@ const BASIS = {
   'not covered': 'Not covered',
   'covered – benefit not published': 'Covered, but benefit not published',
 };
-const EXAMPLE = { 0: { d012: 2, d114: 2, d615: 1, p_i: 1, p_s: 3 } };
+// Starting services: what the average insured person claims in a year (APRA 2024), the "Average member" quick fill
+const EXAMPLE = { 0: { d012: 1, d114: 1, d121: 1, d022: 1, p_i: 1, c_i: 1 } };
 const $ = (id) => document.getElementById(id);
 const fmt = (n) => (n < 0 ? '−' : '') + '$' + Math.abs(Math.round(n)).toLocaleString('en-AU');
 const fmtc = (n) => '$' + n.toLocaleString('en-AU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -3474,6 +3476,8 @@ async function compute() {
       netMap = new Map((S.preferred ? fyList : other).map((r) => [keyOf(r), r]));
       list = dedupe(fyList);
     }
+    // ranked on year 1: options near the top that the normal ranking didn't pair need their from-year-2 figure too
+    if (rankY1) { const nq = query(S.preferred); for (const r of list.slice(0, 120)) if (!ongoing.has(keyOf(r))) ongoing.set(keyOf(r), repricedTotal(r, nq, false)); }
     // What if usage is lighter or heavier? Re-rank (on the same basis) and see where the top options land.
     const scaled = (f, round) => { const q = query(S.preferred); q.firstYear = rankY1; q.usage = q.usage.map((u) => ({ ...u, count: round(u.count * f) })).filter((u) => u.count > 0); return q; };
     const lo = rankAll(scaled(0.5, Math.floor));
@@ -3795,7 +3799,7 @@ function render(list, anyMap, netMap, data, current) {
     const save = np0 ? np0.head : c.total - list[0].total;
     const baseNow = c.total;
     parts.push(`<section class="panel nowbox">
-      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in year 1' : 'a year'} ${saveInfo(c, list[0], np0)}</span>${rankY1 && !np0 && yr2(list[0]) != null ? `<span class="sm bsnote">From year 2: ${c.total - yr2(list[0]) >= 1 ? `save ${fmt(c.total - yr2(list[0]))} a year` : `${fmt(yr2(list[0]) - c.total)} a year more than now`}.</span>` : ''}${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">From year 2. ${yr1Vs(list[0]).replace(' (waiting periods)', '')}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `; ${fmt(np0.yourSave)} of that is saved on your own cover` : ''}</span></div></div>` : (rankY1 ? `<div class="bigsave same costs"><div>In year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
+      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in year 1' : 'a year'} ${saveInfo(c, list[0], np0)}</span>${rankY1 && !np0 && yr2(list[0]) != null && Math.abs(yr2(list[0]) - list[0].total) >= 1 ? `<span class="sm bsnote">From year 2: ${c.total - yr2(list[0]) >= 1 ? `save ${fmt(c.total - yr2(list[0]))} a year` : `${fmt(yr2(list[0]) - c.total)} a year more than now`}.</span>` : ''}${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">From year 2. ${yr1Vs(list[0]).replace(' (waiting periods)', '')}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `; ${fmt(np0.yourSave)} of that is saved on your own cover` : ''}</span></div></div>` : (rankY1 ? `<div class="bigsave same costs"><div>In year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
       <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing' : 'with no'}</span> <span class="nowfig"><span class="nowlbl">cover</span> <b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</span></div></div>
       <p class="nowsave">${!c.products.length || np0 || curMissNow.length || c.products.some((p) => p.closed || p.corp || p.restricted) ? '' : (pos <= 1 ? 'Nothing costs less for what you use.' : `${(pos - 1).toLocaleString('en-AU')} of ${list.length.toLocaleString('en-AU')} ${S.keep?.some(Boolean) || keepPending() ? 'options with cover at least as good as yours' : 'options'} cost less for what you use.`)}${likeForLike(c, list)}</p>
     </section>`);
@@ -3952,10 +3956,10 @@ function render(list, anyMap, netMap, data, current) {
     ? others.slice(0, 120).map((r) => ({ r, v: valueScore(r, list[0]) })).sort((a, b) => b.v - a.v).slice(0, 17).map((x) => x.r)
     : others.slice(0, 17);
   if (rest.length) {
-    parts.push(`<section class="panel rest-panel"><details class="restdet" open><summary><h2 class="ph">More options</h2></summary><div class="restsort"><span class="seg" role="group" aria-label="Sort by"><button type="button" data-restsort="price" aria-pressed="${!byBest}">Cheapest first</button><button type="button" data-restsort="best" aria-pressed="${byBest}">Best value first</button></span><span class="hint">${byBest ? `The ${rest.length} best value after the cards above: price weighed against cover, extras, waiting periods and how each holds up if your usage changes. Option numbers are price ranks.` : `The next ${rest.length} by price (Options #${list.indexOf(rest[0]) + 1} to #${Math.max(...rest.map((r) => list.indexOf(r) + 1))}), apart from the cards above.`}</span></div><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Hover over a gap payment figure to see what the fund pays.</p><div class="table-wrap"><table class="rest">
+    parts.push(`<section class="panel rest-panel"><details class="restdet" open><summary><h2 class="ph">More options</h2></summary><div class="restsort"><span class="seg" role="group" aria-label="Sort by"><button type="button" data-restsort="price" aria-pressed="${!byBest}">Cheapest first</button><button type="button" data-restsort="best" aria-pressed="${byBest}">Best value first</button></span><span class="hint">${byBest ? `The ${rest.length} best value after the cards above: price weighed against cover, extras, waiting periods and how each holds up if your usage changes. Option numbers are price ranks.` : `The next ${rest.length} by price (Options #${list.indexOf(rest[0]) + 1} to #${Math.max(...rest.map((r) => list.indexOf(r) + 1))}), apart from the cards above.`}</span></div><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Under each gap payment: what the fund pays of your services.</p><div class="table-wrap"><table class="rest">
       <thead><tr><th>Compare</th><th>Option</th><th>Policy</th><th class="n" title="What you'd pay the fund in a year, after your rebate">Premiums</th><th class="n" title="What you'd still pay yourself in a year: gaps on your services after the fund's benefits, plus any excess">Gap payments</th><th class="n" title="Premiums plus what you'd still pay yourself for services (and any excess)">${rankY1 ? 'Year 1 total' : 'Total'}</th></tr></thead>
       <tbody>${rest.map((r) => `<tr data-rank="${list.indexOf(r) + 1}"><td>${pickBox(r, true)}</td><td>${list.indexOf(r) + 1}</td><td>${restName(r)}</td>
-        <td class="n" data-l="Premiums">${fmt(r.premium.net)}</td><td class="n" data-l="Gap payments"${r.extras?.totalFees ? ` title="The fund pays ${fmt(r.extras.totalBenefit || 0)} of your ${fmt(r.extras.totalFees)} in services"` : ''}>${fmt(Math.max(0, r.total - r.premium.net))}</td><td class="n" data-l="Total"><b>${fmt(r.total)}</b></td></tr>`).join('')}</tbody></table></div></details></section>`);
+        <td class="n" data-l="Premiums">${fmt(r.premium.net)}</td><td class="n" data-l="Gap payments">${fmt(Math.max(0, r.total - r.premium.net))}${r.extras?.totalFees ? `<span class="fundpays">fund pays ${fmt(r.extras.totalBenefit || 0)} of ${fmt(r.extras.totalFees)}</span>` : ''}</td><td class="n" data-l="Total"><b>${fmt(r.total)}</b></td></tr>`).join('')}</tbody></table></div></details></section>`);
   }
   $('results').innerHTML = parts.join('');
   alignCards();
@@ -5532,7 +5536,7 @@ function saveBadge(r) {
   const d = curNow.total - r.total;
   if (Math.abs(d) < 1) return '<div class="savebadge same">Same cost as your existing cover</div>';
   const y2 = yr2(r);
-  const y2line = y2 != null ? `<span class="yr2">From year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : `${fmt(y2 - curNow.total)} a year more than now`}</span>` : '';
+  const y2line = y2 != null && Math.abs(y2 - r.total) >= 1 ? `<span class="yr2">From year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : `${fmt(y2 - curNow.total)} a year more than now`}</span>` : '';
   if (rankY1) {
     const vs = noCoverNow ? 'having no cover' : 'your existing cover';
     return d > 0 ? `<div class="savebadge good">Save <b>${fmt(d)}</b> in year 1 <span>vs ${vs}</span>${y2line}</div>`
@@ -7008,7 +7012,7 @@ function factRows(r, other, vsSelf) {
       rows.push(['xval', 'Extras', `<span class="${d >= 0 ? 'save' : 'cost'}">Get back ${xp.est ? 'about ' : ''}${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than you pay in extras premiums</span>`]);
     }
   }
-  if (rankY1) rows.push(['first', 'From year 2', yr2(r) != null ? `${fmt(yr2(r))} a year` : '–']);
+  if (rankY1) rows.push(['first', 'From year 2', yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'Same as year 1' : `${fmt(yr2(r))} a year`]);
   else if (whatIf?.first) rows.push(['first', 'Waiting periods', f != null && f > r.total + 0.5 ? `<span class="cost">+${fmt(f - r.total)} in year 1</span> <span class="hint">(${fmt(f)} total)</span>` : 'No effect on your services']);
   if (lo && hi) rows.push(['whatif', 'If your usage changes', Math.max(lo.rank, hi.rank) <= 10 ? 'Stays in the top 10' : `Use half: #${lo.rank} · 50% more: #${hi.rank}`]);
   if (vsSelf != null) rows.push(['self', 'vs paying for services yourself', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${vsSelf >= 0 ? '' : '+'}${fmt(Math.abs(vsSelf))} ${vsSelf >= 0 ? 'less' : 'more'}</span>`]);
