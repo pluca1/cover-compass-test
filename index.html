@@ -350,6 +350,8 @@ table.sbs td .pline .pv > details, table.sbs td .pline .pv > details > summary {
 .fact { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
 .fact dt { color: var(--muted); }
 .fact dd { margin: 0; font-weight: 700; white-space: nowrap; }
+.fact[data-k="xval"] dt { flex: 0 0 auto; }
+.fact[data-k="xval"] dd { white-space: normal; text-align: right; min-width: 0; }
 #results.simple .facts { display: none; }
 #results.hascompare:not(.simple) .card table.bd, #results.hascompare:not(.simple) .card details[data-row="card-wait"] { display: none; }
 table.sbs thead th .ar { display: none; }
@@ -2702,7 +2704,7 @@ const fmtc = (n) => '$' + n.toLocaleString('en-AU', { minimumFractionDigits: 2, 
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
 const defaults = () => ({
-  stateCode: 'NSW', cover: 'S', ages: [40, 40], kids: 2, income: 52500, incomeTyped: false, lhc: [0, 0], gender: ['M', 'F'], keep: [false, false], kidsOn: '', want: 'HE', preferred: false, mixFunds: true, firstYear: false, split: true, splitNeeds: 0, rebateTier: '',
+  stateCode: 'NSW', cover: 'S', ages: [35, 35], kids: 2, income: 52500, incomeTyped: false, lhc: [0, 0], gender: ['M', 'F'], keep: [false, false], kidsOn: '', want: 'HE', preferred: false, mixFunds: true, firstYear: false, split: true, splitNeeds: 0, rebateTier: '',
   cur: { hFund: '', hKey: '', eFund: '', eKey: '', hPaid: '', ePaid: '' },
   curP: { cover: 'S', hFund: '', hKey: '', eFund: '', eKey: '', hPaid: '', ePaid: '' },
   abd: ['', ''],
@@ -2712,12 +2714,20 @@ const defaults = () => ({
   fees: {}, usage: structuredClone(EXAMPLE), person: 0, example: true,
 });
 let S = defaults();
-let firstVisit = false;
-try { firstVisit = !localStorage.getItem('cover-compass') && !localStorage.getItem('cover-compass-guided'); } catch (e) { /* storage unavailable */ }
-try {
-  const saved = JSON.parse(localStorage.getItem('cover-compass') || 'null');
-  if (saved && saved.v === 1) S = { ...S, ...saved.s };
-} catch (e) { /* storage unavailable */ }
+// Nothing is kept between visits for now: every visit starts on the welcome page with nothing filled in,
+// so people sharing a device or a link never see someone else's answers. (Share links still open a comparison.)
+// 'cover-compass-test' = '1' in localStorage keeps the old save-and-restore behaviour, for automated testing only.
+const KEEP = (() => { try { return localStorage.getItem('cover-compass-test') === '1'; } catch (e) { return false; } })();
+let firstVisit = true;
+if (KEEP) {
+  try { firstVisit = !localStorage.getItem('cover-compass') && !localStorage.getItem('cover-compass-guided'); } catch (e) { /* storage unavailable */ }
+  try {
+    const saved = JSON.parse(localStorage.getItem('cover-compass') || 'null');
+    if (saved && saved.v === 1) S = { ...S, ...saved.s };
+  } catch (e) { /* storage unavailable */ }
+} else {
+  try { localStorage.removeItem('cover-compass'); } catch (e) { /* storage unavailable */ }
+}
 // gender is always male or female: fill any blanks (opposite of the other partner where known)
 {
   const g = S.gender || [];
@@ -2729,8 +2739,9 @@ try {
 if (!S.pickV) { if (Array.isArray(S.pick) && !S.pick.length) S.pick = null; S.pickV = 1; }
 S.view = 'detailed';
 // first visit: land on the welcome page; the guided questions start from its button
-if (firstVisit) { S.blank = { cover: 1, state: 1, age0: 1, age1: 1, g0: 1, g1: 1, income: 1 }; S.wantPicked = false; S.fresh = true; S.optsOpen = false; }
-const save = () => { try { localStorage.setItem('cover-compass', JSON.stringify({ v: 1, s: S })); } catch (e) { /* ignore */ } };
+// ages start at 35 for both (people change them); everything else waits for an answer
+if (firstVisit && !location.hash.startsWith('#s-')) { S.blank = { cover: 1, state: 1, g0: 1, g1: 1, income: 1 }; S.wantPicked = false; S.fresh = true; S.optsOpen = false; }
+const save = () => { if (!KEEP) return; try { localStorage.setItem('cover-compass', JSON.stringify({ v: 1, s: S })); } catch (e) { /* ignore */ } };
 
 const cache = {};
 const closedCache = {};
@@ -4736,7 +4747,7 @@ function renderHospPerson() {
 
 // Clear everything back to a blank form (state and income too, so the next client starts clean), then reload.
 function resetAll() {
-  S = { ...defaults(), usage: {}, example: false, preset: null, hospUse: {}, scen: [], funds: [], pick: null, fresh: true, optsOpen: true, mixV: 1, keepV: 1, wantPicked: false, blank: { cover: 1, state: 1, age0: 1, age1: 1, g0: 1, g1: 1, income: 1 } };
+  S = { ...defaults(), usage: {}, example: false, preset: null, hospUse: {}, scen: [], funds: [], pick: null, fresh: true, optsOpen: true, mixV: 1, keepV: 1, wantPicked: false, blank: { cover: 1, state: 1, g0: 1, g1: 1, income: 1 } };
   save();
   location.reload();
 }
@@ -5305,7 +5316,7 @@ async function loadShared() {
   if (!h.startsWith('#s-')) return;
   try {
     const shared = await unpack(h.slice(3));
-    S = { ...defaults(), ...shared, example: false };
+    S = { ...defaults(), ...shared, example: false, fresh: false, blank: {}, optsOpen: false };
     save();
     notify('Opened a shared comparison. Change anything you like.');
   } catch (e) {
@@ -6794,14 +6805,14 @@ function factRows(r, other, vsSelf) {
   const xPrem = r.extrasPrem?.net ?? (r.split && r.split.every((x) => x.extrasPrem || !x.products.some((p) => p.k === 'E' || p.k === 'C')) ? r.split.reduce((t, x) => t + (x.extrasPrem?.net || 0), 0) : null);
   if (S.want === 'HE' && xPrem && r.extras) {
     const d = r.extras.totalBenefit - xPrem;
-    rows.push(['xval', 'Extras pay back', `<span class="${d >= 0 ? 'save' : 'cost'}">${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than they cost</span>`]);
+    rows.push(['xval', 'Extras', `<span class="${d >= 0 ? 'save' : 'cost'}">Get back ${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than you pay in extras premiums</span>`]);
   }
   if (whatIf?.first) rows.push(['first', 'First year (waiting periods)', f != null && f > r.total + 0.5 ? `<span class="cost">${fmt(f)} (+${fmt(f - r.total)})</span>` : 'No extra cost']);
   if (lo && hi) rows.push(['whatif', 'If you use less / more', Math.max(lo.rank, hi.rank) <= 10 ? 'Stays in the top 10' : `Ranks #${lo.rank} / #${hi.rank}`]);
   if (vsSelf != null) rows.push(['self', 'vs paying for services yourself', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${vsSelf >= 0 ? '' : '+'}${fmt(Math.abs(vsSelf))} ${vsSelf >= 0 ? 'less' : 'more'}</span>`]);
   return rows;
 }
-const FACT_LABEL = { pref: 'At preferred providers', xval: 'Extras pay back', first: 'First year (waiting periods)', whatif: 'If you use less / more', self: 'vs paying for services yourself' };
+const FACT_LABEL = { pref: 'At preferred providers', xval: 'Extras', first: 'First year (waiting periods)', whatif: 'If you use less / more', self: 'vs paying for services yourself' };
 // what a blank row means for a card that doesn't have it
 const FACT_BLANK = { pref: 'No difference', first: 'No extra cost' };
 function cardFacts(r, other, vsSelf) {
