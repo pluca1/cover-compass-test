@@ -1,0 +1,827 @@
+{
+ "extractDate": "02-Nov-2026",
+ "funds": {
+  "ACA": {
+   "name": "ACA Health Benefits Fund",
+   "type": "Restricted",
+   "web": "http://acahealth.com.au",
+   "phone": "1300 368 390",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 18,
+    "NSW": 202,
+    "NT": 3,
+    "QLD": 121,
+    "SA": 52,
+    "TAS": 19,
+    "VIC": 146,
+    "WA": 46
+   }
+  },
+  "AHB": {
+   "name": "Defence Health Limited",
+   "type": "Restricted",
+   "web": "http://www.defencehealth.com.au",
+   "phone": "1800 335 425",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 164,
+    "NT": 3,
+    "QLD": 100,
+    "SA": 42,
+    "TAS": 16,
+    "VIC": 120,
+    "WA": 45
+   }
+  },
+  "AHM": {
+   "name": "ahm health insurance",
+   "type": "Open",
+   "web": "http://www.ahm.com.au",
+   "phone": "134 246",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 11,
+    "NSW": 155,
+    "NT": 2,
+    "QLD": 89,
+    "SA": 37,
+    "TAS": 13,
+    "VIC": 100,
+    "WA": 38
+   }
+  },
+  "AMA": {
+   "name": "Doctors' Health Fund",
+   "type": "Restricted",
+   "web": "http://www.doctorshealthfund.com.au",
+   "phone": "1800 226 126",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 164,
+    "NT": 3,
+    "QLD": 98,
+    "SA": 42,
+    "TAS": 16,
+    "VIC": 120,
+    "WA": 44
+   }
+  },
+  "AUF": {
+   "name": "Australian Unity Health Limited",
+   "type": "Open",
+   "web": "http://www.australianunity.com.au",
+   "phone": "13 29 39",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 164,
+    "NT": 3,
+    "QLD": 99,
+    "SA": 42,
+    "TAS": 16,
+    "VIC": 120,
+    "WA": 44
+   }
+  },
+  "BUP": {
+   "name": "Bupa HI Pty Ltd",
+   "type": "Open",
+   "web": "http://www.bupa.com.au",
+   "phone": "134 135",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 14,
+    "NSW": 187,
+    "NT": 2,
+    "QLD": 108,
+    "SA": 45,
+    "TAS": 18,
+    "VIC": 128,
+    "WA": 44
+   }
+  },
+  "CBC": {
+   "name": "CBHS Corporate Health Pty Ltd",
+   "type": "Open",
+   "web": "http://www.cbhscorporatehealth.com.au",
+   "phone": "1300 586 462",
+   "brands": {}
+  },
+  "CBH": {
+   "name": "CBHS Health Fund Limited",
+   "type": "Restricted",
+   "web": "http://www.cbhs.com.au",
+   "phone": "1300 654 123",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 170,
+    "NT": 3,
+    "QLD": 99,
+    "SA": 41,
+    "TAS": 14,
+    "VIC": 122,
+    "WA": 43
+   }
+  },
+  "CDH": {
+   "name": "CDH Benefits Fund",
+   "type": "Open",
+   "web": "http://www.hunterhi.com.au",
+   "phone": "02 4990 1385",
+   "brands": {
+    "CDH01": {
+     "name": "Hunter Health Insurance",
+     "web": null
+    },
+    "CDH02": {
+     "name": "HHI",
+     "web": null
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 11,
+    "NSW": 140,
+    "NT": 2,
+    "QLD": 85,
+    "SA": 36,
+    "TAS": 18,
+    "VIC": 120,
+    "WA": 42
+   }
+  },
+  "CPS": {
+   "name": "see-u by HBF",
+   "type": "Open",
+   "web": "https://www.seeuhealthinsurance.com.au",
+   "phone": "1300 499 260",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 161,
+    "NT": 3,
+    "QLD": 96,
+    "SA": 36,
+    "TAS": 14,
+    "VIC": 116,
+    "WA": 43
+   }
+  },
+  "FAI": {
+   "name": "GU Health",
+   "type": "Open",
+   "web": "http://www.guhealth.com.au",
+   "phone": "1800 249 966",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 15,
+    "NSW": 189,
+    "NT": 3,
+    "QLD": 102,
+    "SA": 45,
+    "TAS": 15,
+    "VIC": 128,
+    "WA": 44
+   }
+  },
+  "GMH": {
+   "name": "GMHBA Limited",
+   "type": "Open",
+   "web": "http://www.gmhba.com.au",
+   "phone": "1300 4 GMHBA (46422)",
+   "brands": {
+    "GMH02": {
+     "name": "Frank Health Insurance",
+     "web": "https://www.frankhealthinsurance.com.au"
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 164,
+    "NT": 3,
+    "QLD": 100,
+    "SA": 42,
+    "TAS": 16,
+    "VIC": 120,
+    "WA": 45
+   }
+  },
+  "HBF": {
+   "name": "HBF Health Limited",
+   "type": "Open",
+   "web": "http://hbf.com.au",
+   "phone": "133 423",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 179,
+    "NT": 3,
+    "QLD": 97,
+    "SA": 41,
+    "TAS": 14,
+    "VIC": 126,
+    "WA": 50
+   }
+  },
+  "HCF": {
+   "name": "HCF",
+   "type": "Open",
+   "web": "http://www.hcf.com.au",
+   "phone": "13 13 34",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 15,
+    "NSW": 187,
+    "NT": 2,
+    "QLD": 99,
+    "SA": 39,
+    "TAS": 17,
+    "VIC": 115,
+    "WA": 39
+   }
+  },
+  "HCI": {
+   "name": "HCi",
+   "type": "Open",
+   "web": "https://www.hciltd.com.au",
+   "phone": "1800 804 950",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 15,
+    "NSW": 182,
+    "NT": 3,
+    "QLD": 106,
+    "SA": 46,
+    "TAS": 14,
+    "VIC": 129,
+    "WA": 45
+   }
+  },
+  "HIF": {
+   "name": "Health Insurance Fund of Australia Limited",
+   "type": "Open",
+   "web": "http://www.hif.com.au",
+   "phone": "1300 134 060",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 179,
+    "NT": 3,
+    "QLD": 96,
+    "SA": 42,
+    "TAS": 15,
+    "VIC": 125,
+    "WA": 41
+   }
+  },
+  "LHM": {
+   "name": "Peoplecare Health Insurance",
+   "type": "Open",
+   "web": "http://www.peoplecare.com.au",
+   "phone": "1800 808 690",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 179,
+    "NT": 3,
+    "QLD": 97,
+    "SA": 42,
+    "TAS": 15,
+    "VIC": 126,
+    "WA": 41
+   }
+  },
+  "LHS": {
+   "name": "Latrobe Health Services",
+   "type": "Open",
+   "web": "http://www.latrobehealth.com.au",
+   "phone": "1300 362 144",
+   "brands": {
+    "LHS01": {
+     "name": "Federation Health",
+     "web": null
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 168,
+    "NT": 3,
+    "QLD": 93,
+    "SA": 39,
+    "TAS": 14,
+    "VIC": 123,
+    "WA": 41
+   }
+  },
+  "MBP": {
+   "name": "Medibank Private Limited",
+   "type": "Open",
+   "web": "http://medibank.com.au",
+   "phone": "132331",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 167,
+    "NT": 2,
+    "QLD": 96,
+    "SA": 38,
+    "TAS": 15,
+    "VIC": 108,
+    "WA": 43
+   }
+  },
+  "MDH": {
+   "name": "Mildura Health Fund",
+   "type": "Open",
+   "web": "http://www.mildurahealthfund.com.au",
+   "phone": "(03) 5023 0269",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 11,
+    "NSW": 140,
+    "NT": 2,
+    "QLD": 84,
+    "SA": 36,
+    "TAS": 18,
+    "VIC": 120,
+    "WA": 42
+   }
+  },
+  "MYO": {
+   "name": "AIA Health Insurance Pty Ltd",
+   "type": "Open",
+   "web": "http://www.aia.com.au/health",
+   "phone": "1800333004",
+   "brands": {
+    "MYO01": {
+     "name": "MyOwn",
+     "web": null
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 179,
+    "NT": 3,
+    "QLD": 97,
+    "SA": 42,
+    "TAS": 15,
+    "VIC": 126,
+    "WA": 41
+   }
+  },
+  "NHB": {
+   "name": "Navy Health Ltd",
+   "type": "Restricted",
+   "web": "https://navyhealth.com.au/why-navy-health/",
+   "phone": "1300 306 289",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 174,
+    "NT": 3,
+    "QLD": 95,
+    "SA": 41,
+    "TAS": 11,
+    "VIC": 122,
+    "WA": 38
+   }
+  },
+  "NIB": {
+   "name": "nib Health Funds Ltd.",
+   "type": "Open",
+   "web": "https://www.nib.com.au",
+   "phone": "13 14 63",
+   "brands": {
+    "NIB01": {
+     "name": "Qantas Insurance",
+     "web": "https://www.qantasinsurance.com/health"
+    },
+    "NIB02": {
+     "name": "AAMI Health Insurance",
+     "web": "https://www.aami.com.au/health"
+    },
+    "NIB03": {
+     "name": "Suncorp Health Insurance",
+     "web": "https://www.suncorp.com.au/health"
+    },
+    "NIB05": {
+     "name": "Apia Health Insurance",
+     "web": "https://www.apia.com.au/health"
+    },
+    "NIB06": {
+     "name": "ING Health Insurance",
+     "web": "https://www.ing.com.au/insurance/health-insurance.html"
+    },
+    "NIB04": {
+     "name": "Priceline Health Insurance",
+     "web": "https://www.priceline.com.au/health-insurance"
+    },
+    "NIB07": {
+     "name": "Real Health Insurance",
+     "web": null
+    },
+    "NIB08": {
+     "name": "Seniors Health Insurance",
+     "web": null
+    },
+    "NIB09": {
+     "name": "GU Health Insurance",
+     "web": "http://www.guhealth.com.au"
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 15,
+    "NSW": 189,
+    "NT": 3,
+    "QLD": 102,
+    "SA": 45,
+    "TAS": 15,
+    "VIC": 128,
+    "WA": 44
+   }
+  },
+  "NTF": {
+   "name": "Teachers Health",
+   "type": "Restricted",
+   "web": "http://www.teachershealth.com.au",
+   "phone": "1300 728 188",
+   "brands": {
+    "NTF02": {
+     "name": "UniHealth",
+     "web": "http://unihealthinsurance.com.au"
+    },
+    "NTF01": {
+     "name": "Nurses & Midwives Health",
+     "web": "https://www.nmhealth.com.au/"
+    },
+    "NTF03": {
+     "name": "TUH",
+     "web": "http://www.teachershealth.com.au"
+    },
+    "NTF04": {
+     "name": "Union Health",
+     "web": "http://www.teachershealth.com.au"
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 173,
+    "NT": 3,
+    "QLD": 96,
+    "SA": 43,
+    "TAS": 16,
+    "VIC": 124,
+    "WA": 43
+   }
+  },
+  "OMF": {
+   "name": "National Health Benefits Australia Pty Ltd (onemedifund)",
+   "type": "Open",
+   "web": "http://www.onemedifund.com.au",
+   "phone": "1800 148 626",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 179,
+    "NT": 3,
+    "QLD": 97,
+    "SA": 42,
+    "TAS": 15,
+    "VIC": 126,
+    "WA": 41
+   }
+  },
+  "PWA": {
+   "name": "Phoenix Health Fund Limited",
+   "type": "Open",
+   "web": "https://www.phoenixhealthfund.com.au",
+   "phone": "1800 028 817",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 169,
+    "NT": 3,
+    "QLD": 98,
+    "SA": 42,
+    "TAS": 16,
+    "VIC": 122,
+    "WA": 43
+   }
+  },
+  "QCH": {
+   "name": "Queensland Country Health Fund",
+   "type": "Open",
+   "web": "https://www.queenslandcountry.health/",
+   "phone": "1800 813 415",
+   "brands": {
+    "QCH02": {
+     "name": "Territory Health Fund",
+     "web": "https://www.territoryhealth.com.au/"
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 157,
+    "NT": 3,
+    "QLD": 97,
+    "SA": 39,
+    "TAS": 13,
+    "VIC": 117,
+    "WA": 44
+   }
+  },
+  "QTU": {
+   "name": "TUH, part of the Teachers Health Group",
+   "type": "Restricted",
+   "web": "https://tuh.com.au/",
+   "phone": "1300 360 701",
+   "brands": {
+    "QTU01": {
+     "name": "Union Health",
+     "web": "https://unionhealth.com.au"
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 166,
+    "NT": 3,
+    "QLD": 95,
+    "SA": 39,
+    "TAS": 14,
+    "VIC": 122,
+    "WA": 41
+   }
+  },
+  "RBH": {
+   "name": "Reserve Bank Health Society Ltd",
+   "type": "Restricted",
+   "web": "http://www.myrbhs.com.au",
+   "phone": "1800 027 299",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 179,
+    "NT": 3,
+    "QLD": 97,
+    "SA": 42,
+    "TAS": 15,
+    "VIC": 126,
+    "WA": 41
+   }
+  },
+  "RTE": {
+   "name": "RT Health - a division of The Hospitals Contribution Fund",
+   "type": "Open",
+   "web": "http://www.rthealth.com.au",
+   "phone": "1300 886 123",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 15,
+    "NSW": 188,
+    "NT": 2,
+    "QLD": 101,
+    "SA": 41,
+    "TAS": 17,
+    "VIC": 121,
+    "WA": 43
+   }
+  },
+  "SLM": {
+   "name": "St Lukes",
+   "type": "Open",
+   "web": "http://www.stlukes.com.au",
+   "phone": "1300 651 988",
+   "brands": {
+    "SLM01": {
+     "name": "Astute Simplicity Health",
+     "web": "https://astutesimplicityhealth.com.au/"
+    }
+   },
+   "agreementHospitals": {
+    "ACT": 11,
+    "NSW": 141,
+    "NT": 2,
+    "QLD": 84,
+    "SA": 36,
+    "TAS": 18,
+    "VIC": 120,
+    "WA": 42
+   }
+  },
+  "SPE": {
+   "name": "Police Health",
+   "type": "Restricted",
+   "web": "http://www.policehealth.com.au",
+   "phone": "1800 603 603",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 176,
+    "NT": 3,
+    "QLD": 96,
+    "SA": 41,
+    "TAS": 15,
+    "VIC": 126,
+    "WA": 41
+   }
+  },
+  "SPS": {
+   "name": "Health Partners",
+   "type": "Open",
+   "web": "http://www.healthpartners.com.au",
+   "phone": "1300 113 113",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 12,
+    "NSW": 170,
+    "NT": 3,
+    "QLD": 94,
+    "SA": 41,
+    "TAS": 13,
+    "VIC": 121,
+    "WA": 41
+   }
+  },
+  "WFD": {
+   "name": "Westfund Limited",
+   "type": "Open",
+   "web": "http://www.westfund.com.au",
+   "phone": "1300 937 838 ",
+   "brands": {},
+   "agreementHospitals": {
+    "ACT": 13,
+    "NSW": 162,
+    "NT": 3,
+    "QLD": 102,
+    "SA": 41,
+    "TAS": 13,
+    "VIC": 119,
+    "WA": 45
+   }
+  }
+ },
+ "excludedRestricted": [
+  "ACA Health Benefits Fund",
+  "CBHS Health Fund Limited",
+  "Defence Health Limited",
+  "Doctors' Health Fund",
+  "Navy Health Ltd",
+  "Police Health",
+  "Reserve Bank Health Society Ltd",
+  "TUH, part of the Teachers Health Group",
+  "Teachers Health"
+ ],
+ "states": {
+  "SA": 5206,
+  "NT": 5137,
+  "WA": 5207,
+  "NSW": 5126,
+  "VIC": 5211,
+  "TAS": 5158,
+  "QLD": 5092
+ },
+ "tierMinimums": {
+  "SilverPlus": [
+   "BackNeckSpine",
+   "Blood",
+   "BoneJointMuscle",
+   "BrainNervousSystem",
+   "BreastSurgery",
+   "ChemotherapyRadiotherapyImmunotherapy",
+   "DentalSurgery",
+   "Diabetes",
+   "DigestiveSystem",
+   "EarNoseThroat",
+   "Eye",
+   "GastrointestinalEndoscopy",
+   "Gynaecology",
+   "HeartVascular",
+   "HerniaAppendix",
+   "ImplantationHearingDevices",
+   "JointReconstructions",
+   "KidneyBladder",
+   "LungChest",
+   "MaleReproductive",
+   "MiscarriageTerminationOfPregnancy",
+   "PainManagement",
+   "PlasticReconstructiveSurgery",
+   "PodiatricSurgery",
+   "Skin",
+   "TonsilsAdenoidsGrommets"
+  ],
+  "Silver": [
+   "BackNeckSpine",
+   "Blood",
+   "BoneJointMuscle",
+   "BrainNervousSystem",
+   "BreastSurgery",
+   "ChemotherapyRadiotherapyImmunotherapy",
+   "DentalSurgery",
+   "Diabetes",
+   "DigestiveSystem",
+   "EarNoseThroat",
+   "Eye",
+   "GastrointestinalEndoscopy",
+   "Gynaecology",
+   "HeartVascular",
+   "HerniaAppendix",
+   "ImplantationHearingDevices",
+   "JointReconstructions",
+   "KidneyBladder",
+   "LungChest",
+   "MaleReproductive",
+   "MiscarriageTerminationOfPregnancy",
+   "PainManagement",
+   "PlasticReconstructiveSurgery",
+   "PodiatricSurgery",
+   "Skin",
+   "TonsilsAdenoidsGrommets"
+  ],
+  "Gold": [
+   "AssistedReproductive",
+   "BackNeckSpine",
+   "Blood",
+   "BoneJointMuscle",
+   "BrainNervousSystem",
+   "BreastSurgery",
+   "Cataracts",
+   "ChemotherapyRadiotherapyImmunotherapy",
+   "DentalSurgery",
+   "Diabetes",
+   "Dialysis",
+   "DigestiveSystem",
+   "EarNoseThroat",
+   "Eye",
+   "GastrointestinalEndoscopy",
+   "Gynaecology",
+   "HeartVascular",
+   "HerniaAppendix",
+   "HospitalPsychiatric",
+   "ImplantationHearingDevices",
+   "InsulinPumps",
+   "JointReconstructions",
+   "JointReplacements",
+   "KidneyBladder",
+   "LungChest",
+   "MaleReproductive",
+   "MiscarriageTerminationOfPregnancy",
+   "PainManagement",
+   "PainManagementWithDevice",
+   "PalliativeCare",
+   "PlasticReconstructiveSurgery",
+   "PodiatricSurgery",
+   "PregnancyBirth",
+   "Rehabilitation",
+   "Skin",
+   "SleepStudies",
+   "TonsilsAdenoidsGrommets",
+   "WeightLossSurgery"
+  ],
+  "Bronze": [
+   "BoneJointMuscle",
+   "BrainNervousSystem",
+   "BreastSurgery",
+   "ChemotherapyRadiotherapyImmunotherapy",
+   "Diabetes",
+   "DigestiveSystem",
+   "EarNoseThroat",
+   "Eye",
+   "GastrointestinalEndoscopy",
+   "Gynaecology",
+   "HerniaAppendix",
+   "JointReconstructions",
+   "KidneyBladder",
+   "MaleReproductive",
+   "MiscarriageTerminationOfPregnancy",
+   "PainManagement",
+   "Skin",
+   "TonsilsAdenoidsGrommets"
+  ],
+  "BronzePlus": [
+   "BoneJointMuscle",
+   "BrainNervousSystem",
+   "BreastSurgery",
+   "ChemotherapyRadiotherapyImmunotherapy",
+   "DentalSurgery",
+   "Diabetes",
+   "DigestiveSystem",
+   "EarNoseThroat",
+   "Eye",
+   "GastrointestinalEndoscopy",
+   "Gynaecology",
+   "HerniaAppendix",
+   "JointReconstructions",
+   "KidneyBladder",
+   "MaleReproductive",
+   "MiscarriageTerminationOfPregnancy",
+   "PainManagement",
+   "Skin",
+   "TonsilsAdenoidsGrommets"
+  ],
+  "Basic": [],
+  "BasicPlus": []
+ }
+}
