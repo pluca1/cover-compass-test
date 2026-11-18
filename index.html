@@ -19,7 +19,7 @@
   --accent-ink: #ffffff;
   --accent-soft: #dcefe9;
   --gold: #a8710f;
-  --gold-soft: #f6ead2;
+  --gold-soft: #f6ead2; --silver: #5f6b75; --silver-soft: #eef1f4; --bronze: #9a5a2a; --bronze-soft: #f6e8dc;
   --cur-col: #f4f7fa; --cur-edge: #d5dde6;
   --good: #1f7a4d;
   --his: #2563b0; --his-soft: #e4eefa; --hers: #c2387a; --hers-soft: #fbe7f0;
@@ -32,13 +32,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e1513; --surface: #162220; --surface-2: #1d2b28; --line: #2c3d39; --fg: #e5eeeb; --muted: #95a8a2;
-    --accent: #5cc3a8; --accent-ink: #062019; --accent-soft: #19362f; --gold: #e2b25a; --gold-soft: #3a2e17; --cur-col: #232c33; --cur-edge: #3d4a55;
+    --accent: #5cc3a8; --accent-ink: #062019; --accent-soft: #19362f; --gold: #e2b25a; --gold-soft: #3a2e17; --silver: #c3ccd4; --silver-soft: #262e35; --bronze: #e0a27a; --bronze-soft: #3a2619; --cur-col: #232c33; --cur-edge: #3d4a55;
     --good: #6fd19c; --warn: #f0b153; --bad: #f08a72; --his: #86b8f0; --his-soft: #182a40; --hers: #f28fbe; --hers-soft: #3a1d2c; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0e1513; --surface: #162220; --surface-2: #1d2b28; --line: #2c3d39; --fg: #e5eeeb; --muted: #95a8a2;
-  --accent: #5cc3a8; --accent-ink: #062019; --accent-soft: #19362f; --gold: #e2b25a; --gold-soft: #3a2e17; --cur-col: #232c33; --cur-edge: #3d4a55;
+  --accent: #5cc3a8; --accent-ink: #062019; --accent-soft: #19362f; --gold: #e2b25a; --gold-soft: #3a2e17; --silver: #c3ccd4; --silver-soft: #262e35; --bronze: #e0a27a; --bronze-soft: #3a2619; --cur-col: #232c33; --cur-edge: #3d4a55;
   --good: #6fd19c; --warn: #f0b153; --bad: #f08a72; --his: #86b8f0; --his-soft: #182a40; --hers: #f28fbe; --hers-soft: #3a1d2c; color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -337,6 +337,9 @@ table.sbs td .pline .pv > details, table.sbs td .pline .pv > details > summary {
 .badge.cheap { background: var(--gold-soft); color: var(--gold); border: 1px solid var(--gold); }
 .badge.rec { background: var(--accent); color: var(--accent-ink); }
 .badge.up { background: var(--his-soft); color: var(--his); border: 1px solid var(--his); }
+.badge.rankb { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+.badge.rankb.silver { background: var(--silver-soft); color: var(--silver); border-color: var(--silver); }
+.badge.rankb.bronze { background: var(--bronze-soft); color: var(--bronze); border-color: var(--bronze); }
 .badge.upmini { background: none; color: var(--his); border: 1px dashed var(--his); font-weight: 600; }
 .recwhy.up { background: var(--his-soft); }
 .recwhy.up b { color: var(--his); }
@@ -6646,7 +6649,12 @@ function cardBadges(r) {
   // with existing cover, the saving leads and the total sits under it, smaller
   const sb = saveBadge(r);
   const top = (x) => `<div class="cardtop${sb ? ' savefirst' : ''}"><div class="badges">${x.join('')}</div>${sb ? sb + tot : tot}</div>`;
-  if (!b.length) return { top: top(b), why: '<div class="cardwhy"></div>' };
+  // no other badge: say where it sits on price (gold, silver, bronze for the three cheapest)
+  if (!b.length) {
+    const n = list.indexOf(r) + 1;
+    const ord = `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+    return { top: top([`<span class="badge rankb${n === 2 ? ' silver' : n === 3 ? ' bronze' : ''}">${ord} cheapest</span>`]), why: '<div class="cardwhy"></div>' };
+  }
   let why = '';
   if (upPick && r === upPick.r && !(recPick && r === recPick.r)) {
     why = `<div class="recwhy up"><b>${upPick.more > 0.5 ? `${fmt(upPick.more)} a year more than Option #1, still ${fmt(upPick.saves)} less than you pay now. What the extra buys:` : `Still ${fmt(upPick.saves)} a year less than your existing cover, and:`}</b><ul>${upPick.why.map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
