@@ -429,6 +429,12 @@ table.bd td .hint { display: block; font-size: 12px; }
 .bigsave .bsnote { display: block; margin-top: 2px; color: var(--muted); }
 .bigsave .nw { white-space: nowrap; font-size: inherit; font-weight: inherit; }
 .bigsave .bsnote.yr1 { color: var(--warn); }
+.bigsave .yrs { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 2px; }
+.bigsave .yrc { flex: 1 1 150px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; color: var(--fg); }
+.bigsave .yrc .yl { display: block; font: 700 11px/1.4 var(--font-body, inherit); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+.bigsave .yrc b { font-size: 20px; color: var(--good); }
+.bigsave .yrc b.cost { color: var(--bad); }
+.bigsave .yrc .ys { display: block; font-size: 12px; color: var(--muted); }
 .savebadge .yr1 { margin-top: 3px; color: var(--warn); opacity: 1; font-weight: 600; }
 .cardtot .yr1 { font-size: 12px; font-weight: 600; color: var(--warn); }
 .bigsave.same { background: var(--surface-2); color: var(--fg); font-size: 15px; }
@@ -4126,13 +4132,14 @@ function render(list, anyMap, netMap, data, current) {
     const np0 = newParts(list[0]);
     const save = np0 ? np0.head : c.total - list[0].total;
     const baseNow = c.total;
+    const yh = np0 ? null : yearsHead(c, list[0]);
     parts.push(`<section class="panel nowbox">
-      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in Year 1' : !np0 && yr1(list[0]) ? 'a year from Year 2' : 'a year'} ${saveInfo(c, list[0], np0)}</span>${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${rankY1 && !np0 ? (() => {
+      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to ${yh ? yh.head(saveInfo(c, list[0], np0)) : `<span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in Year 1' : 'a year'} ${saveInfo(c, list[0], np0)}</span>`}${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${rankY1 && !np0 ? (() => {
         const own = yr2(list[0]) ?? list[0].total, out = [];
-        if (Math.abs(own - list[0].total) >= 1) out.push(`From Year 2: this option ${c.total - own >= 1 ? `saves ${fmt(c.total - own)} a year` : `costs ${fmt(own - c.total)} a year more than ${c.products.length ? 'now' : 'having no cover'}`}.`);
+        if (!yh && Math.abs(own - list[0].total) >= 1) out.push(`From Year 2: this option ${c.total - own >= 1 ? `saves ${fmt(c.total - own)} a year` : `costs ${fmt(own - c.total)} a year more than ${c.products.length ? 'now' : 'having no cover'}`}.`);
         if (y2Top != null && own - y2Top >= 1) out.push(`From Year 2, a different option is cheapest: ${c.total - y2Top >= 1 ? `it saves ${fmt(c.total - y2Top)} a year` : `it costs ${fmt(y2Top - c.total)} a year more`}, but costs more in Year 1. Choose “From Year 2” below to see it.`);
         return out.length ? `<span class="sm bsnote">${out.join(' ')}</span>` : '';
-      })() : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">${(() => { const d = c.total - yr1(list[0]); return d >= 1 ? `Year 1: Saves ${fmt(d)}` : `Year 1: Costs ${fmt(-d)} more than ${c.products.length ? 'now' : 'having no cover'}`; })()}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 && !netCoverCase() ? `<div class="bigsave same costs"><div>In Year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From Year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length && S.want !== 'E' ? `<div class="bigsave same"><div>Cover for a net ${fmt(list[0].total - c.total)} ${rankY1 ? 'in Year 1' : 'a year'} <span class="sm bsnote">${netCoverWhy(c, list[0])}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
+      })() : ''}${yh ? yh.tiles : ''}</div>${saveMeter(save, baseNow, yh ? (rankY1 ? ' in Year 1' : ' from Year 2') : '')}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 && !netCoverCase() ? `<div class="bigsave same costs"><div>In Year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From Year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length && S.want !== 'E' ? `<div class="bigsave same"><div>Cover for a net ${fmt(list[0].total - c.total)} ${rankY1 ? 'in Year 1' : 'a year'} <span class="sm bsnote">${netCoverWhy(c, list[0])}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
       <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing' : 'with no'}</span> <span class="nowfig"><span class="nowlbl">cover</span> <b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</span></div></div>
       <p class="nowsave">${!c.products.length || np0 || curMissNow.length || c.products.some((p) => p.closed || p.corp || p.restricted) ? '' : (pos <= 1 ? 'Nothing costs less for what you use.' : `${(pos - 1).toLocaleString('en-AU')} of ${list.length.toLocaleString('en-AU')} ${S.keep?.some(Boolean) || keepPending() ? 'options with cover at least as good as yours' : 'options'} cost less for what you use.`)}${likeForLike(c, list)}</p>
     </section>`);
@@ -5893,6 +5900,19 @@ function tierForCats(cats) {
 }
 
 // ---------------------------------------------------------------- savings and summary
+// When Year 1 and later years differ (waiting periods): the headline gives both, with a column for each year.
+// Ranked from Year 2, Option #1's Year 1 comes from its first-year total; ranked on Year 1, its later years from yr2.
+function yearsHead(c, r) {
+  const y1 = rankY1 ? r.total : yr1(r), y2 = rankY1 ? yr2(r) : r.total;
+  if (y1 == null || y2 == null || Math.abs(y1 - y2) < 1) return null;
+  const s1 = c.total - y1, s2 = c.total - y2;
+  const vs = c.products.length ? 'now' : 'having no cover';
+  const fig = (v, sfx, info) => `<span class="nw"><b>${fmt(v)}</b> ${sfx}${info || ''}</span>`;
+  const head = (info) => (s1 >= 1 && s2 >= 1 ? `${fig(s1, 'in Year 1')} <span class="nw">and</span> ${fig(s2, 'a year from Year 2', ' ' + info)}`
+    : s2 >= 1 ? fig(s2, 'a year from Year 2', ' ' + info) : fig(s1, 'in Year 1', ' ' + info));
+  const col = (lbl, sv, tot, yr) => `<div class="yrc"><span class="yl">${lbl}</span>${sv >= 1 ? `<b>Save ${fmt(sv)}</b>` : sv <= -1 ? `<b class="cost">${fmt(-sv)} more</b>` : '<b>Same</b>'}<span class="ys">${sv >= 1 && c.total > 0 ? `${Math.round((100 * sv) / c.total)}% less · ` : sv <= -1 ? `than ${vs} · ` : ''}you'd pay ${fmt(tot)}${yr}</span></div>`;
+  return { head, tiles: `<div class="yrs">${col('Year 1', s1, y1, '')}${col('From Year 2', s2, y2, ' a year')}</div>${y1 > y2 ? '<span class="sm bsnote">Year 1 costs more because services you use during waiting periods pay nothing.</span>' : ''}` };
+}
 // No cover now and hospital cover wanted: going without always looks cheaper, because it leaves out the hospital
 // care itself. Show what the cover costs instead: its net cost after the surcharge it ends and what extras pay back.
 const netCoverCase = () => noCoverNow && S.want !== 'E';
@@ -6045,7 +6065,7 @@ function prettyName(p) {
 }
 
 // How big the saving is, as a meter with a pointer: share of what you pay now.
-function saveMeter(save, now, later = false) {
+function saveMeter(save, now, sfx = '') {
   const pct = now > 0 ? (100 * save) / now : 0;
   // one scale, by share of what you pay now: some under 10%, great 10-25%, huge 25%+ (under 1%: about the same)
   const levels = [[save > 0.5 ? 'About the same' : 'Best deal already', 1], ['Some savings', 10], ['Great savings', 25], ['Huge savings', Infinity]];
@@ -6055,7 +6075,7 @@ function saveMeter(save, now, later = false) {
   const into = lvl === 0 ? 0.5 : Math.max(0, Math.min(1, (pct - lo) / (hi - lo)));
   const pos = (lvl + 0.1 + 0.8 * into) * 25;
   return `<div class="meter" role="img" aria-label="${levels[lvl][0]}${save > 0.5 ? `: ${Math.round(pct)}% less than now` : ''}">
-    <div class="meter-label">${levels[lvl][0]}${later && lvl ? ' from Year 2' : ''}${save > 0.5 && pct >= 1 ? `<span class="pct">${Math.round(pct)}% less</span>` : ''}</div>
+    <div class="meter-label">${levels[lvl][0]}${lvl ? sfx : ''}${save > 0.5 && pct >= 1 ? `<span class="pct">${Math.round(pct)}% less</span>` : ''}</div>
     <div class="meter-bar">${levels.map((l, i) => `<span class="m${i}${i === lvl ? ' on' : ''}"></span>`).join('')}<i style="left:${pos.toFixed(1)}%"></i></div>
     <div class="meter-ticks"><span>No saving</span><span>Some</span><span>Great</span><span>Huge</span></div>
   </div>`;
