@@ -5880,6 +5880,10 @@ const G = { i: 0, ans: {}, hp: 0, xp: 0, dir: 1 };
 const gEv = (el, type) => el.dispatchEvent(new Event(type, { bubbles: true }));
 // fields still unanswered after a fresh start; any change to one (guided or form) counts as answering it
 const BLANK_KEY = { cover: 'cover', state: 'state', age0: 'age0', age1: 'age1', g0: 'g0', g1: 'g1', incomeBand: 'income', income: 'income' };
+// Guided mode: move on by itself once a step's required answers are all in (only after a button press, never while typing)
+function gAuto(id) {
+  setTimeout(() => { if (guideSteps()[G.i]?.id === id && !gBlankBlocked(id) && !$('gNext').disabled) G.next(); }, 350);
+}
 function gBlankBlocked(id) {
   const b = S.blank || {};
   if (id === 'who') return !!b.cover;
@@ -6041,7 +6045,7 @@ const GUIDE_STEPS = [
       .map(([v, l, s]) => gChip(v, l, !S.blank?.cover && S.cover === v, s)).join('')}</div>
       ${S.cover === 'F' || S.cover === 'SP' ? `${gStepper('kids', G.ans.kids || 0, 'How many dependent children?', 0, 8)}<small class="gnote gneed"${G.ans.kids ? ' hidden' : ''}>Add how many children to continue.</small>` : ''}`,
     bind: (el) => {
-      el.querySelector('.gchips').addEventListener('click', (e) => { const b = e.target.closest('.gchip'); if (!b) return; gSet('cover', b.dataset.v); G.redraw(); });
+      el.querySelector('.gchips').addEventListener('click', (e) => { const b = e.target.closest('.gchip'); if (!b) return; gSet('cover', b.dataset.v); G.redraw(); if (b.dataset.v === 'S' || b.dataset.v === 'C') gAuto('who'); });
       gWire(el);
     },
   },
@@ -6059,7 +6063,7 @@ const GUIDE_STEPS = [
       <div class="gfield grow1"><span class="glbl">Gender</span><div class="gpills" data-g="${i}">${[['F', 'Female'], ['M', 'Male']].map(([v, l]) => gPill(v, l, !S.blank?.[`g${i}`] && (S.gender?.[i] || '') === v)).join('')}</div></div></div></div>`).join(''),
     bind: (el) => {
       for (const i of [0, 1]) { const a = el.querySelector(`#gAge${i}`); if (a) a.addEventListener('input', () => { if (a.value) gSet(`age${i}`, a.value, 'input'); }); }
-      for (const box of el.querySelectorAll('[data-g]')) box.addEventListener('click', (e) => { const b = e.target.closest('.gpill'); if (!b) return; gSet(`g${box.dataset.g}`, b.dataset.v); gPick(box, b); });
+      for (const box of el.querySelectorAll('[data-g]')) box.addEventListener('click', (e) => { const b = e.target.closest('.gpill'); if (!b) return; gSet(`g${box.dataset.g}`, b.dataset.v); gPick(box, b); if (gAdults().every((i) => !S.blank?.[`g${i}`])) gAuto('people'); });
     },
   },
   {
@@ -6072,7 +6076,7 @@ const GUIDE_STEPS = [
         <div class="gfield"><label class="glbl" for="gIncome">Or enter it exactly <span class="gopt">optional</span></label><div class="gmoney"><span>$</span><input type="number" id="gIncome" min="0" step="1000" value="${S.incomeTyped ? S.income : ''}" placeholder="${S.incomeTyped || S.blank?.income ? '' : S.income}"></div></div>`;
     },
     bind: (el) => {
-      el.querySelector('.gchips').addEventListener('click', (e) => { const b = e.target.closest('.gchip'); if (!b) return; gSet('incomeBand', b.dataset.v); gPick(el.querySelector('.gchips'), b); const gi = el.querySelector('#gIncome'); gi.value = ''; gi.placeholder = S.income; });
+      el.querySelector('.gchips').addEventListener('click', (e) => { const b = e.target.closest('.gchip'); if (!b) return; gSet('incomeBand', b.dataset.v); gPick(el.querySelector('.gchips'), b); const gi = el.querySelector('#gIncome'); gi.value = ''; gi.placeholder = S.income;  gAuto('income'); });
       el.querySelector('#gIncome').addEventListener('input', (e) => gSet('income', e.target.value, 'input'));
     },
   },
@@ -6104,6 +6108,8 @@ const GUIDE_STEPS = [
         G.ans[`lhc${i}`] = b.dataset.v;
         if (b.dataset.v === 'none') gSet(`lhc${i}`, 0, 'input');
         G.redraw();
+        // everyone covered since before 31: nothing else to enter
+        if (gAdults().every((j) => (Number(S.ages[j]) > 0 && Number(S.ages[j]) < 31) || G.ans[`lhc${j}`] === 'none')) gAuto('lhc');
       });
       for (const i of [0, 1]) {
         const sync = () => setTimeout(() => { const r = el.querySelector(`#gLhcRes${i}`); if (r) r.textContent = $(`lhcres${i}`)?.textContent || ''; }, 120);
@@ -6161,7 +6167,7 @@ const GUIDE_STEPS = [
   },
   {
     id: 'hospital', skip: () => S.want === 'E', q: 'Hospital cover: what does each person need?',
-    hint: 'Pick a level. Everything that level always covers is ticked for you. Add anything you know you may need, and the level moves up to match.',
+    hint: 'Pick a level, or select the services you want. Everything a level always covers is ticked for you. Add anything you know you may need, and the level moves up to match.',
     html: () => {
       const ids = people().map((_, i) => i).filter((i) => i < kidStart() || kidsCovered());
       if (!ids.includes(G.hp)) G.hp = 0;
