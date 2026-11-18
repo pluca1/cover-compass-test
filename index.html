@@ -409,6 +409,7 @@ table.bd td .hint { display: block; font-size: 12px; }
 .bigsave b { font-family: var(--font-display); font-size: 30px; }
 .bigsave span { font-size: 13px; font-weight: 500; }
 .bigsave .bsnote { display: block; margin-top: 2px; color: var(--muted); }
+.bigsave .nw { white-space: nowrap; font-size: inherit; font-weight: inherit; }
 .bigsave .bsnote.yr1 { color: var(--warn); }
 .savebadge .yr1 { margin-top: 3px; color: var(--warn); opacity: 1; font-weight: 600; }
 .cardtot .yr1 { font-size: 12px; font-weight: 600; color: var(--warn); }
@@ -741,7 +742,7 @@ body.guiding .opttab { display: none; }
 .nowbox .meter-bar span { border-radius: 5px; }
 .nowbox .meter-bar i { top: -13px; border-left-width: 9px; border-right-width: 9px; border-top-width: 11px; transform: translateX(-9px); }
 .nowbox .meter-ticks { font-size: 12.5px; margin-top: 5px; font-weight: 600; }
-@media (max-width: 700px) { .nowbox .meter { flex-basis: 100%; max-width: none; } .nowbox .meter-label { font-size: 19px; } }
+@media (max-width: 700px) { .nowbox .meter { flex-basis: 100%; max-width: none; min-width: 0; } .nowbox .meter-label { font-size: 19px; } }
 
 /* policy boxes: hospital and extras each on their own line, same weight, small label in front */
 .sb-line { display: grid; grid-template-columns: 66px minmax(0, 1fr); align-items: baseline; }
@@ -990,7 +991,11 @@ details.hosp-list li > span:first-child { min-width: 0; overflow-wrap: break-wor
 
 /* top banner: the saving leads; the total sits under it, smaller, as on the cards */
 .nowbox .nowhead.nowafter { margin-top: 2px; }
-.nowbox .nowafter .nowtot { gap: 6px; align-items: baseline; }
+.nowbox .nowafter .nowtot { display: block; }
+.nowbox .nowafter .nowfig { white-space: nowrap; }
+.nowbox .nowafter .nowfig .nowbig { margin-left: 2px; }
+.meter-ticks span { white-space: nowrap; }
+@media (max-width: 400px) { .nowbox .meter-ticks { font-size: 11px; } }
 .nowbox .nowafter .nowlbl { font-size: 13px; }
 .nowbox .nowafter .nowbig { font-size: 18px; }
 
@@ -3704,9 +3709,8 @@ function render(list, anyMap, netMap, data, current) {
     const save = np0 ? np0.head : c.total - list[0].total;
     const baseNow = c.total;
     parts.push(`<section class="panel nowbox">
-      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <b>${fmt(save)}</b> a year ${saveInfo(c, list[0], np0)}${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">From year 2. ${yr1Vs(list[0]).replace(' (waiting periods)', '')}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `; ${fmt(np0.yourSave)} of that is saved on your own cover` : ''}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`}`}
-      <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing cover' : 'with no cover'}</span><b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</div></div>
-      ${np0 ? `<p class="nowsave newnote">${newCoverNote(np0)}</p>` : ''}
+      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <b>${fmt(save)}</b> <span class="nw">a year ${saveInfo(c, list[0], np0)}</span>${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">From year 2. ${yr1Vs(list[0]).replace(' (waiting periods)', '')}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `; ${fmt(np0.yourSave)} of that is saved on your own cover` : ''}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`}`}
+      <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing' : 'with no'}</span> <span class="nowfig"><span class="nowlbl">cover</span> <b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</span></div></div>
       <p class="nowsave">${!c.products.length || np0 || curMissNow.length || c.products.some((p) => p.closed || p.corp || p.restricted) ? '' : (pos <= 1 ? 'Nothing costs less for what you use.' : `${(pos - 1).toLocaleString('en-AU')} of ${list.length.toLocaleString('en-AU')} ${S.keep?.some(Boolean) || keepPending() ? 'options with cover at least as good as yours' : 'options'} cost less for what you use.`)}${likeForLike(c, list)}</p>
     </section>`);
   }
@@ -5439,19 +5443,6 @@ function splitLine(np, short = false) {
   if (own >= 1) return `${fmt(own)} on ${cov} cover + ${fmt(gain)} from ${nw} new cover`;
   if (own <= -1) return `${fmt(gain)} from ${nw} new cover, less ${fmt(-own)} more on ${np.ni === 1 ? 'yours' : "your partner's"}`;
   return `from ${nw} new cover`;
-}
-// The line under the banner: what the new cover costs and what it replaces
-function newCoverNote(np) {
-  // "Your partner's new cover: $3,245 a year with Option #1 (premium plus what they'd still pay for services),
-  //  vs $1,065 they pay for services now. Net cost: $2,180 a year."
-  const p = np.ni === 1;
-  const Nw = p ? "Your partner's" : 'Your';
-  const svc = np.servicesNow >= 1, mls = np.mlsNow >= 1;
-  const now = svc && mls ? `${fmt(np.servicesNow)} for services + the ${fmt(np.mlsNow)} surcharge now`
-    : mls ? `the ${fmt(np.mlsNow)} surcharge you both pay now`
-    : svc ? `${fmt(np.servicesNow)} ${p ? 'they pay' : 'you pay'} for services now` : '';
-  const res = np.better >= 0 ? `<b>${fmt(np.better)} a year better off.</b>` : `<b>Net cost: ${fmt(-np.better)} a year.</b>`;
-  return `<b>${Nw} new cover:</b> ${fmt(np.newPart)} a year with Option #1 (premium plus what ${p ? "they'd" : "you'd"} still pay for services)${now ? `, vs ${now}. ${res}` : '.'}`;
 }
 // "Partner: new Silver Plus cover, 29 of 38 categories incl. Pregnancy & birth (12-month wait)"
 function newCoverLine(r) {
