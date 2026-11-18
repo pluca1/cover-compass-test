@@ -1267,13 +1267,13 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
     <form class="panel inputs" id="form" autocomplete="off">
       <div class="optrow"><button type="button" class="textbtn" id="resetAll" title="Clear every answer and start again">Start from scratch</button></div>
       <div class="sec">
-        <div class="people-bar"><h2>Start from a common situation</h2></div>
+        <div class="people-bar"><h2>Quick start: a household like yours</h2></div>
         <div class="mine" id="mine"></div>
         <div class="presets" id="presets" role="group" aria-label="Common situations"></div>
         <p class="preset-note" id="presetNote" hidden></p>
       </div>
       <div class="sec">
-        <h2>Your household</h2>
+        <h2>Who's covered</h2>
         <div class="row">
           <div class="field"><label for="state">State</label>
             <select id="state">
@@ -1284,8 +1284,8 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
             <select id="cover"><option value="S">Just me</option><option value="C">Couple</option><option value="F">Family</option><option value="SP">Single parent</option></select></div>
         </div>
         <div class="row">
-          <div class="field"><label for="age0">Your age</label><input type="number" id="age0" min="18" max="110"></div>
-          <div class="field" id="age1-wrap"><label for="age1">Partner's age</label><input type="number" id="age1" min="18" max="110"></div>
+          <div class="field"><label for="age0">Your age</label><input type="number" id="age0" min="18" max="99"></div>
+          <div class="field" id="age1-wrap"><label for="age1">Partner's age</label><input type="number" id="age1" min="18" max="99"></div>
           <div class="field"><label for="g0">Your gender</label>
             <select id="g0"><option value="M">Male</option><option value="F">Female</option></select></div>
           <div class="field" id="g1-wrap"><label for="g1">Partner's gender</label>
@@ -1328,7 +1328,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
       </div>
 
       <div class="sec">
-        <h2>What you want</h2>
+        <h2>Cover type and funds</h2>
         <div class="seg" id="want" role="group" aria-label="Type of cover">
           <button type="button" data-v="E">Extras only</button>
           <button type="button" data-v="H">Hospital only</button>
@@ -1340,8 +1340,8 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
             <span class="hint">If only one of you needs something, there's no point paying for both of you to have it. For example, if she needs pregnancy cover, he doesn't. Two single policies, each covering just what that person needs, can cost less than one couples policy. Tick to compare both ways.</span></span></label>
           <span class="hint" id="split-hint">Each policy covers what's ticked for that person under Hospital needs.</span>
         </div>
-        <details class="group" id="more-opts">
-          <summary>More options <span class="hint" id="more-sum"></span></summary>
+        <details class="group" id="more-opts" open>
+          <summary>Funds and preferences <span class="hint" id="more-sum"></span></summary>
           <div class="dl">
         <label class="toggle"><input type="checkbox" id="majorOnly">
           <span><span class="lbl">Major funds</span><br><span class="hint">Ticks the five largest insurers in the list below (about 80% of insured Australians): Medibank, ahm, Bupa, HCF, nib and HBF. Add any others you know too; brands sold under other names (e.g. Qantas or ING through nib) aren't included.</span></span></label>
@@ -1361,7 +1361,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
       </div>
 
       <div class="sec" id="cur-sec">
-        <div class="people-bar"><h2>Your current cover <span style="text-transform:none;letter-spacing:0;font-weight:500">(optional)</span></h2><button type="button" class="textbtn" id="curClear">Clear</button></div>
+        <div class="people-bar"><h2>What you have now <span style="text-transform:none;letter-spacing:0;font-weight:500">(optional)</span></h2><button type="button" class="textbtn" id="curClear">Clear</button></div>
         <div class="nocur" id="cur-none">
           <label class="toggle"><input type="checkbox" id="curNoH"><span>I don't currently have hospital cover</span></label>
           <label class="toggle"><input type="checkbox" id="curNoE"><span>I don't currently have extras</span></label>
@@ -1444,7 +1444,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
       </div>
 
       <div class="sec" id="hosp-sec">
-        <h2>Hospital needs</h2>
+        <h2>Hospital: what you need covered</h2>
         <div class="people-bar"><div class="people" id="hpeople" role="group" aria-label="Whose hospital needs"></div>
           <button type="button" class="textbtn" id="clearCats">Clear all</button></div>
         <span class="hint">Pick a person, then tick what their hospital cover must include and any stays you expect for them.</span>
@@ -1488,7 +1488,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
       </div>
 
       <div class="sec" id="extras-sec">
-        <h2>Extras you expect to use this year</h2>
+        <h2>Extras: what you'll use this year</h2>
         <div class="example" id="example" hidden>
           <span>Filled with what the average insured person claims in a year: a check-up, scale &amp; clean, fluoride and X-ray, one physio and one chiro visit.</span>
           <button type="button" id="clear">Start blank</button>
@@ -1717,33 +1717,46 @@ const PRESETS = [
 // statistics (services per 1,000 insured, annualised): about 4 dental services, ~1 physio, ~0.7 chiro and ~0.9
 // optical services per insured person a year. The others are common patterns anchored to those averages.
 const EXTRAS_PRESETS = [
+  // Ordered by how common the pattern is. Sources: APRA benefits by service (dental far ahead, then optical,
+  // physio, chiro, natural therapies such as remedial massage); a Finder survey (63% of members claim dental,
+  // 50% optical, 19% physio); GMHBA claims per member a year (dental 3.7, optical 0.85, physio 0.84, chiro 0.61);
+  // Bupa members aged 18-34 (dental, then physio, chiro, remedial massage, optical).
   { id: 'average', label: 'Average member', source: 'APRA 2024 averages',
     desc: 'What the average insured Australian claims in a year: a dental check-up, clean, fluoride and X-ray, one physio and one chiro visit.',
     usage: { d012: 1, d114: 1, d121: 1, d022: 1, p_i: 1, c_i: 1 } },
+  { id: 'checkups-glasses', label: 'Check-ups and new glasses',
+    desc: 'The two most-claimed extras: six-monthly dental check-ups and cleans with X-rays, and a new pair of single-vision glasses.',
+    usage: { d012: 2, d114: 2, d022: 1, o_sv: 1 } },
+  { id: 'dental-only', label: 'Dentist twice a year',
+    desc: 'Six-monthly check-ups and cleans, X-rays and a filling.',
+    usage: { d012: 2, d114: 2, d022: 2, d531: 1 } },
   { id: 'dental-physio-specs', label: 'Dentist, a few physios & specs',
     desc: 'Two check-ups and cleans with X-rays, a short course of physio (1 initial + 4 follow-ups) and a new pair of glasses.',
     usage: { d012: 2, d114: 2, d022: 2, p_i: 1, p_s: 4, o_sv: 1 } },
-  { id: 'dental-only', label: 'Dental check-ups only',
-    desc: 'Six-monthly check-ups and cleans, X-rays and a filling.',
-    usage: { d012: 2, d114: 2, d022: 2, d531: 1 } },
-  { id: 'big-dental', label: 'Big dental year',
-    desc: 'Check-up, clean and X-rays, plus a crown and a root canal.',
-    usage: { d012: 1, d114: 1, d022: 2, d615: 1, d417: 1 } },
-  { id: 'glasses', label: 'Glasses wearer',
-    desc: 'Dental check-up and clean, plus new multifocal glasses.',
-    usage: { d012: 1, d114: 1, o_mf: 1 } },
+  { id: 'young-active', label: 'Young and active',
+    desc: 'What younger members claim most: a check-up and clean, a short course of physio, a few chiro visits and remedial massages.',
+    usage: { d012: 1, d114: 1, p_i: 1, p_s: 3, c_i: 1, c_s: 2, rm_i: 1, rm_s: 2 } },
   { id: 'sport', label: 'Sport & back care',
     desc: 'A course of physio (1 + 5), monthly-ish remedial massage (6) and a chiro visit, plus a check-up and clean.',
     usage: { p_i: 1, p_s: 5, rm_i: 1, rm_s: 5, c_i: 1, d012: 1, d114: 1 } },
+  { id: 'over-60s', label: '60+ everyday',
+    desc: 'Two check-ups and cleans with an X-ray, new multifocal glasses, a podiatrist (1 + 2) and a short course of physio (1 + 3).',
+    usage: { d012: 2, d114: 2, d022: 1, o_mf: 1, pod_i: 1, pod_s: 2, p_i: 1, p_s: 3 } },
+  { id: 'big-dental', label: 'Big dental year',
+    desc: 'Check-up, clean and X-rays, plus a crown and a root canal.',
+    usage: { d012: 1, d114: 1, d022: 2, d615: 1, d417: 1 } },
+  { id: 'psych', label: 'Psychology',
+    desc: 'Ten psychology sessions (on top of any Medicare-funded ones) and a dental check-up and clean.',
+    usage: { ps_i: 1, ps_s: 9, d012: 1, d114: 1 } },
   { id: 'child', label: 'Child',
     desc: 'Six-monthly check-ups, cleans and fluoride, and X-rays.',
     usage: { d012: 2, d114: 2, d121: 2, d022: 1 } },
   { id: 'braces', label: 'Braces',
-    desc: "Braces this year (full upper and lower: this year's share of a typical $7,000-$9,000 treatment), plus six-monthly check-ups and cleans. Orthodontics usually has a 12-month wait (a new policy won't pay for braces starting sooner) and a lifetime limit.",
+    desc: "Braces this year (full upper and lower: this year's share of a typical $7,000-$9,000 treatment), plus six-monthly check-ups and cleans. Orthodontics usually has a 12-month wait (a new policy won't pay for braces starting sooner) and a lifetime limit per person.",
     usage: { d881: 1, d012: 2, d114: 2 } },
-  { id: 'psych', label: 'Psychology',
-    desc: 'Ten psychology sessions (on top of any Medicare-funded ones) and a dental check-up and clean.',
-    usage: { ps_i: 1, ps_s: 9, d012: 1, d114: 1 } },
+  { id: 'paul', label: 'Paul',
+    desc: 'Two check-ups, cleans and fluorides, an X-ray and a filling; single-vision glasses; physio (1 + 2); a remedial massage; a podiatrist (1 + 1) and a pair of custom orthotics.',
+    usage: { d012: 2, d114: 2, d121: 2, d022: 1, d531: 1, o_sv: 1, p_i: 1, p_s: 2, rm_i: 1, pod_i: 1, pod_s: 1, orth: 1 } },
 ];
 
 // "What if" scenarios: a common bad year added on top of what you entered (for you, the first adult).
@@ -2869,6 +2882,15 @@ function hasKids() {
   const curFam = (c) => c === 'F' || c === 'SP';
   return kidsCovered() || curFam(S.cur?.cover) || (partnerSeparate() && curFam(S.curP?.cover));
 }
+const AGE_MIN = 18, AGE_MAX = 99;
+// why an age for you (0) or your partner (1) can't be used; '' when it's fine or not entered yet
+function ageProblem(v, i = 0) {
+  const n = Number(v);
+  if (v === '' || v == null || !n) return '';
+  if (n < AGE_MIN) return `${i ? 'Your partner' : 'You'} must be ${AGE_MIN} or over to hold a policy (younger people are covered as dependants on a family or single parent policy).`;
+  if (n > AGE_MAX) return `Enter an age of ${AGE_MAX} or under.`;
+  return '';
+}
 function adultAges() { return S.cover === 'C' || S.cover === 'F' ? [S.ages[0], S.ages[1]] : [S.ages[0]]; }
 function adultAbd() { const a = S.abd || ['', '']; return S.cover === 'C' || S.cover === 'F' ? [a[0], a[1]] : [a[0]]; }
 // no loading before 31 (it starts the 1 July after you turn 31), whatever was entered
@@ -2903,6 +2925,14 @@ function initForm() {
   bindNumber('age1', () => S.ages[1], (v) => (S.ages[1] = v));
   // tapping an age box selects the number, so typing replaces it
   for (const id of ['age0', 'age1']) $(id).addEventListener('focus', (e) => { try { e.target.select(); } catch (err) { /* not supported */ } });
+  // ages for you and your partner: 18 to 99 (younger people are covered as dependants)
+  for (const [k, id] of [[0, 'age0'], [1, 'age1']]) $(id).addEventListener('change', (e) => {
+    const v = Number(e.target.value);
+    if (!e.target.value || (v >= AGE_MIN && v <= AGE_MAX)) return;
+    const c = Math.min(AGE_MAX, Math.max(AGE_MIN, Math.round(v) || AGE_MIN));
+    e.target.value = c; e.target.dispatchEvent(new Event('input', { bubbles: true }));
+    notify(ageProblem(v, k) + ` Set to ${c}.`);
+  });
   bindNumber('kids', () => S.kids, (v) => { S.kids = Math.max(1, Math.min(8, v)); renderPeople(); });
   // Income: picking a band fills in a typical figure for it (shown in grey); typing an exact figure replaces it.
   if (S.incomeTyped == null) S.incomeTyped = !incomeBands().some((b) => b[1] === S.income);
@@ -3059,15 +3089,19 @@ function syncVisibility() {
   const couple = S.cover === 'C' || S.cover === 'F';
   $('age1-wrap').hidden = !couple;
   $('g1-wrap').hidden = !couple;
-  $('dl-partner').hidden = !couple;
-  $('lhcc1-wrap').hidden = !couple;
+  // the LHC loading only applies from 31: hide each person's row (and calculator) while they're under 31
+  const young = (i) => Number(S.ages[i]) > 0 && Number(S.ages[i]) < 31;
+  $('lhc0').closest('.dl-row').hidden = young(0);
+  $('lhcc0-wrap').hidden = young(0);
+  $('dl-partner').hidden = !couple || young(1);
+  $('lhcc1-wrap').hidden = !couple || young(1);
   renderIncomeBands();
   const more = [S.funds?.length && `${S.funds.length} chosen fund${S.funds.length === 1 ? '' : 's'}`, S.want === 'HE' && S.mixFunds === false && 'one fund only', S.preferred && 'preferred providers'].filter(Boolean);
   $('more-sum').textContent = more.join(', ');
   fundNotes();
   const lhcTxt = adultLhc().map((x, i) => (x > 0 ? `${i ? 'partner' : 'you'} ${x}% loading` : null)).filter(Boolean);
   $('disc-sum').textContent = lhcTxt.join(', ') || 'none';
-  $('disc').hidden = allUnder31(); // nobody old enough for a loading
+  $('disc').hidden = allUnder31() || S.want === 'E'; // nobody old enough for a loading, or no hospital cover wanted
   const anyUsage = Object.values(S.usage || {}).some((u) => Object.keys(u).length);
   $('clearAll').disabled = !anyUsage;
 
@@ -3824,12 +3858,12 @@ function render(list, anyMap, netMap, data, current) {
   }
   {
     const as = [0, 1].map((i) => ({ i, l: i < adultAges().length ? lhcAssumed(i) : null })).filter((x) => x.l);
-    if (as.length && S.want !== 'E') parts.push(`<div class="notice">Hospital premiums include an assumed <b>Lifetime Health Cover loading</b> of ${as.map((x) => `${x.l}% for ${x.i ? 'your partner' : 'you'} (age ${S.ages[x.i]})`).join(' and ')}, as ${[S.cur, S.curP].some((st) => st?.noH) ? "there's no hospital cover now" : 'no current hospital cover was entered'} (based on your age on the last 1 July, so it could be 2% more). If you've held hospital cover before, enter the actual loading under <b>Your household</b>.</div>`);
+    if (as.length && S.want !== 'E') parts.push(`<div class="notice">Hospital premiums include an assumed <b>Lifetime Health Cover loading</b> of ${as.map((x) => `${x.l}% for ${x.i ? 'your partner' : 'you'} (age ${S.ages[x.i]})`).join(' and ')}, as ${[S.cur, S.curP].some((st) => st?.noH) ? "there's no hospital cover now" : 'no current hospital cover was entered'} (based on your age on the last 1 July, so it could be 2% more). If you've held hospital cover before, enter the actual loading under <b>Who's covered</b>.</div>`);
   }
   if (S.want !== 'E' && q.hospital?.assumedStay) {
-    parts.push(`<div class="notice">You've added a hospital stay without saying what it's for, so that person's cover is limited to <b>Bronze or better</b>, the level that pays for common admissions. Tick the treatment under Hospital needs for a sharper answer.</div>`);
+    parts.push(`<div class="notice">You've added a hospital stay without saying what it's for, so that person's cover is limited to <b>Bronze or better</b>, the level that pays for common admissions. Tick the treatment under Hospital: what you need covered for a sharper answer.</div>`);
   } else if (S.want !== 'E' && !(S.hosp.cats || []).length && !currentHospitals().length && !Object.values(S.hospUse || {}).some((u) => u.mls)) {
-    parts.push(`<div class="notice">You haven't picked any hospital needs, so the cheapest options are <b>Basic policies that cover little beyond accidents or ambulance</b>. Tick what you want covered under Hospital needs${Math.max(...adultAges().map(Number)) >= 50 ? ' (at your age, most people want Silver or better)' : ''}.</div>`);
+    parts.push(`<div class="notice">You haven't picked any hospital needs, so the cheapest options are <b>Basic policies that cover little beyond accidents or ambulance</b>. Tick what you want covered under Hospital: what you need covered${Math.max(...adultAges().map(Number)) >= 50 ? ' (at your age, most people want Silver or better)' : ''}.</div>`);
   }
   // a couple where only one person has services entered: separate policies would leave the other with hospital only
   if (S.want !== 'H' && nServices > 0 && (S.cover === 'C' || S.cover === 'F') && S.split !== false) {
@@ -6338,19 +6372,25 @@ const GUIDE_STEPS = [
     hint: 'Age sets your rebate, age-based discount and LHC loading. Gender keeps pregnancy cover on the right person.',
     html: () => gAdults().map((i) => `<div class="gcardlet">
       <div class="gwho">${i ? 'Your partner' : 'You'}</div>
-      <div class="grow"><div class="gfield"><label class="glbl" for="gAge${i}">Age</label><input class="gnum" type="number" id="gAge${i}" min="18" max="110" value="${S.blank?.[`age${i}`] ? '' : S.ages[i] || ''}" placeholder="e.g. 40"></div>
+      <div class="grow"><div class="gfield"><label class="glbl" for="gAge${i}">Age</label><input class="gnum" type="number" id="gAge${i}" min="${AGE_MIN}" max="${AGE_MAX}" value="${S.blank?.[`age${i}`] ? '' : S.ages[i] || ''}" placeholder="e.g. 40"><small class="gnote greq" id="gAgeErr${i}" hidden></small></div>
       <div class="gfield grow1"><span class="glbl">Gender</span><div class="gpills" data-g="${i}">${[['F', 'Female'], ['M', 'Male']].map(([v, l]) => gPill(v, l, !S.blank?.[`g${i}`] && (S.gender?.[i] || '') === v)).join('')}</div></div></div></div>`).join(''),
     bind: (el) => {
       for (const i of [0, 1]) {
         const a = el.querySelector(`#gAge${i}`);
         if (!a) continue;
-        a.addEventListener('input', () => { G.ans[`ageTyped${i}`] = true; if (a.value) gSet(`age${i}`, a.value, 'input'); });
+        a.addEventListener('input', () => {
+          G.ans[`ageTyped${i}`] = true;
+          const bad = ageProblem(a.value, i), err = el.querySelector(`#gAgeErr${i}`);
+          if (err) { err.textContent = bad; err.hidden = !bad; }
+          if (a.value && !bad) gSet(`age${i}`, a.value, 'input');
+          $('gNext').disabled = gAdults().some((j) => ageProblem(el.querySelector(`#gAge${j}`)?.value, j));
+        });
         // the 35 is only a starting point: clear it when they tap in, and put it back if they leave it empty
         a.addEventListener('focus', () => { if (!G.ans[`ageTyped${i}`]) { a.placeholder = a.value || a.placeholder; a.value = ''; } });
         a.addEventListener('blur', () => { if (a.value === '') a.value = S.ages[i] || ''; });
       }
       for (const box of el.querySelectorAll('[data-g]')) box.addEventListener('click', (e) => { const b = e.target.closest('.gpill'); if (!b) return; gSet(`g${box.dataset.g}`, b.dataset.v); gPick(box, b); // move on only once everyone's age has been entered as well (ages start at 35, so a gender tap alone shouldn't skip past them)
-        if (gAdults().every((i) => !S.blank?.[`g${i}`] && G.ans[`ageTyped${i}`])) gAuto('people'); });
+        if (gAdults().every((i) => !S.blank?.[`g${i}`] && G.ans[`ageTyped${i}`] && !ageProblem(el.querySelector(`#gAge${i}`)?.value, i))) gAuto('people'); });
     },
   },
   {
@@ -6709,6 +6749,7 @@ function drawGuide() {
   st.bind($('guide').querySelector('.gbody'));
   if (st.id === 'who' && (S.cover === 'F' || S.cover === 'SP') && !G.ans.kids) $('gNext').disabled = true;
   if (st.id === 'want' && S.wantPicked === false) $('gNext').disabled = true;
+  if (st.id === 'people' && gAdults().some((i) => ageProblem(document.querySelector(`#gAge${i}`)?.value, i))) $('gNext').disabled = true;
   if (gBlankBlocked(st.id)) $('gNext').disabled = true;
   // existing cover: the "keep at least your current level?" question must be answered before moving on
   if (st.id === 'current' && $('guide').querySelector('[data-gkeep]') && !S.keepAns) { $('gNext').disabled = true; $('gNext').title = 'Answer whether to keep your current level of hospital cover'; }
