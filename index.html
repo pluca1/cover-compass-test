@@ -668,7 +668,6 @@ body.guiding .wrap > .grid, body.guiding #footer { visibility: hidden; }
 .info .trow { display: flex; align-items: center; gap: 6px; }
 .info .trow b:last-child { margin-left: auto; }
 .info .tip small { display: block; color: var(--muted); margin: 0 0 6px 16px; font-size: 12px; }
-@media (max-width: 700px) { .info .tip { left: auto; right: -10px; transform: none; } }
 
 .cardtot { display: flex; flex-direction: column; gap: 2px; }
 .cardtot .nowlbl { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: none; }
@@ -1189,6 +1188,20 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
   #results { padding-bottom: 76px; }
   /* section titles a touch smaller */
   .sbs-panel .ph, .rest-panel .ph { font-size: 20px; }
+}
+/* ---- phones: explanations open as a panel across the screen, so they can't run off either edge */
+.info .tip { white-space: normal; }
+@media (max-width: 700px) {
+  .info .tip, .info .savetip, .bigsave .info .tip, .bigsave .info .savetip { position: fixed; left: 12px; right: 12px; top: auto; bottom: calc(16px + env(safe-area-inset-bottom, 0px)); width: auto; max-height: 60vh; overflow-y: auto; transform: none; z-index: 1000; box-shadow: 0 12px 40px rgba(0,0,0,.25); }
+}
+/* ---- phones: keep "Switch and save up to $X a year" on one line where it fits */
+@media (max-width: 480px) {
+  .nowbox .bigsave { font-size: 14.5px; gap: 2px 8px; padding: 12px 14px; }
+  .nowbox .bigsave > div > b, .nowbox .bigsave .nw > b { font-size: 25px; }
+}
+@media (max-width: 380px) {
+  .nowbox .bigsave { font-size: 13px; padding: 12px 12px; }
+  .nowbox .bigsave > div > b, .nowbox .bigsave .nw > b { font-size: 21px; }
 }
 </style>
 
@@ -3709,7 +3722,7 @@ function render(list, anyMap, netMap, data, current) {
     const save = np0 ? np0.head : c.total - list[0].total;
     const baseNow = c.total;
     parts.push(`<section class="panel nowbox">
-      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <b>${fmt(save)}</b> <span class="nw">a year ${saveInfo(c, list[0], np0)}</span>${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">From year 2. ${yr1Vs(list[0]).replace(' (waiting periods)', '')}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `; ${fmt(np0.yourSave)} of that is saved on your own cover` : ''}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`}`}
+      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <span class="nw"><b>${fmt(save)}</b> a year ${saveInfo(c, list[0], np0)}</span>${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">From year 2. ${yr1Vs(list[0]).replace(' (waiting periods)', '')}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `; ${fmt(np0.yourSave)} of that is saved on your own cover` : ''}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`}`}
       <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing' : 'with no'}</span> <span class="nowfig"><span class="nowlbl">cover</span> <b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</span></div></div>
       <p class="nowsave">${!c.products.length || np0 || curMissNow.length || c.products.some((p) => p.closed || p.corp || p.restricted) ? '' : (pos <= 1 ? 'Nothing costs less for what you use.' : `${(pos - 1).toLocaleString('en-AU')} of ${list.length.toLocaleString('en-AU')} ${S.keep?.some(Boolean) || keepPending() ? 'options with cover at least as good as yours' : 'options'} cost less for what you use.`)}${likeForLike(c, list)}</p>
     </section>`);
@@ -5955,13 +5968,17 @@ function gCurBlock(k) {
       ep ? picked(ep, 'e') + money(`${pf}EPaid`, 'What you pay a month')
         : st.noE ? `<div class="gpolicy none"><span class="gdot"></span><span>No extras</span><button type="button" class="gx" data-undo="${pf}NoE" aria-label="Change">×</button></div>`
           : search('E', `Search ${their} extras policy, e.g. HBF Standard Extras`, 'NoE', `${k ? 'They have' : 'I have'} no extras`));
-  return `<div class="gfield"><span class="glbl">Policy type</span><div class="gpills" data-curtype="${pf}">${types.map(([v, l]) => gPill(v, l, (st.cover || '') === v || (k && !st.cover && v === 'S'))).join('')}</div></div>
-    <div class="gcsteps">${hStep}${eStep}</div>
-    ${money(`${pf}TPaid`, 'What you pay a month in total (hospital + extras)')}`;
+  // the policy type starts unanswered: pick it first, then the policies (once a policy is in, it counts as picked)
+  const typed = !!st.typePicked || !!hp || !!ep || !!st.noH || !!st.noE;
+  return `<div class="gfield"><span class="glbl">Policy type</span><div class="gpills" data-curtype="${pf}">${types.map(([v, l]) => gPill(v, l, typed && (st.cover || (k ? 'S' : '')) === v)).join('')}</div>${typed ? '' : `<small class="gnote greq">Choose ${k ? 'their' : 'your'} policy type first, then search for the policy.</small>`}</div>
+    ${typed ? `<div class="gcsteps">${hStep}${eStep}</div>
+    ${money(`${pf}TPaid`, 'What you pay a month in total (hospital + extras)')}` : ''}`;
 }
 function gCurBind(el) {
   for (const box of el.querySelectorAll('[data-curtype]')) box.addEventListener('click', (e) => {
     const b = e.target.closest('.gpill'); if (!b) return;
+    const st = box.dataset.curtype === 'curP' ? S.curP : S.cur;
+    st.typePicked = true;
     gSet(`${box.dataset.curtype}Cover`, b.dataset.v);
     setTimeout(G.redraw, 250);
   });
