@@ -259,6 +259,10 @@ details.group[open] > summary::after { transform: rotate(90deg); }
 .presets button { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 5px 11px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .presets button:hover { border-color: var(--accent); color: var(--accent); }
 .presets button[aria-pressed=true] { background: var(--accent-soft); border-color: var(--accent); color: var(--fg); }
+/* TESTING ONLY: Randomise button */
+.presets .rndbtn { background: #6d28d9; border-color: #6d28d9; color: #fff; }
+.presets .rndbtn:hover { background: #5b21b6; border-color: #5b21b6; color: #fff; }
+.presets button:disabled { opacity: .6; cursor: progress; }
 .preset-note { margin: 0; font-size: 13px; background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; }
 details.hosp-list > summary { cursor: pointer; list-style: none; }
 details.hosp-list > summary::-webkit-details-marker { display: none; }
@@ -3078,8 +3082,15 @@ function initForm() {
     $(`g${i}`).addEventListener('change', (e) => { S.gender[i] = e.target.value; placePregnancy(); renderHospPerson(); changed(); });
   }
   renderMine();
-  $('presets').innerHTML = PRESETS.map((p) => `<button type="button" data-id="${p.id}" title="${esc(p.desc)}" aria-pressed="${S.preset === p.id}">${esc(p.label)}</button>`).join('');
-  $('presets').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) applyPreset(b.dataset.id); });
+  // TESTING ONLY: each quick start rolls a random, fitting scenario; Randomise re-rolls the one last picked
+  $('presets').innerHTML = PRESETS.map((p) => `<button type="button" data-id="${p.id}" title="${esc(p.desc)}" aria-pressed="${S.preset === p.id}">${esc(p.label)}</button>`).join('')
+    + '<button type="button" class="rndbtn" id="rndBtn" title="A different random scenario for the household picked (or any household)">\u21bb Randomise</button>';
+  $('presets').addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    b.disabled = true;
+    randomScenario(b.id === 'rndBtn' ? S.preset : b.dataset.id).catch(() => { b.disabled = false; toast('Could not make a random scenario.'); });
+  });
+  if (S.randomNote) { $('presetNote').textContent = S.randomNote; $('presetNote').hidden = false; }
   $('resetAll').addEventListener('click', resetAll);
   $('xpresets').innerHTML = EXTRAS_PRESETS.map((p) => `<button type="button" data-id="${p.id}" title="${esc(p.desc)}">${esc(p.label)}</button>`).join('');
   $('xpresets').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) applyExtrasPreset(b.dataset.id); });
@@ -3421,6 +3432,191 @@ function applyPreset(id) {
   $('presetNote').textContent = `${p.desc}${mlsNote} Usage is a typical pattern, not your own figures: change anything below.`;
   $('presetNote').hidden = false;
   changed(true);
+}
+
+// ---------------------------------------------------------------- random test scenarios (TESTING ONLY)
+// Each quick-start button fills every question with a random but fitting set of answers for that household,
+// and "Randomise" re-rolls the household last picked. The scenario opens like a share link (so it can be
+// passed on). Remove this block, the Randomise button and its CSS once testing is done.
+const RND = {
+  pick: (a) => a[Math.floor(Math.random() * a.length)],
+  int: (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1)),
+  chance: (p) => Math.random() < p,
+  // [value, weight] pairs
+  weighted: (pairs) => { const t = pairs.reduce((s, [, w]) => s + w, 0); let r = Math.random() * t; for (const [v, w] of pairs) { if ((r -= w) < 0) return v; } return pairs[pairs.length - 1][0]; },
+};
+// Who each quick start describes, and what fits them. ages: [you lo, hi], partner within gap of you.
+const RND_PROFILES = {
+  'family-plan': { cover: 'C', ages: [25, 37], gap: 4, kids: 0, want: [['HE', 85], ['H', 15]], income: [1, 3, 2, 1],
+    hosp: (i, g) => (i === S.gender.indexOf('F') ? ['pregnancy'] : [RND.pick(['young', 'sport', null])]), tier: [['SilverPlus', 70], ['Gold', 30]],
+    extras: ['average', 'checkups-glasses', 'dental-only', 'dental-physio-specs', 'young-active'], excess: [[250, 1], [500, 3], [750, 3]] },
+  'young-family': { cover: 'F', ages: [29, 43], gap: 4, kids: [1, 3], want: [['HE', 85], ['H', 10], ['E', 5]], income: [2, 4, 3, 1],
+    hosp: () => [RND.pick(['midlife', 'young', 'sport', null, null])], kidHosp: 'child', tier: [['Bronze', 3], ['BronzePlus', 3], ['Silver', 2], ['SilverPlus', 1], ['Gold', 1]],
+    extras: ['average', 'checkups-glasses', 'dental-only', 'dental-physio-specs', 'sport'], kidExtras: ['child'], excess: [[250, 1], [500, 3], [750, 4], [1500, 1]] },
+  braces: { cover: 'F', ages: [36, 52], gap: 5, kids: [2, 3], want: [['HE', 90], ['E', 10]], income: [1, 3, 4, 2],
+    hosp: () => [RND.pick(['midlife', 'sport', null, null])], kidHosp: 'child', tier: [['Bronze', 3], ['BronzePlus', 3], ['Silver', 2], ['Gold', 1]],
+    extras: ['average', 'checkups-glasses', 'dental-only', 'dental-physio-specs', 'big-dental'], kidExtras: ['child'], braces: true, excess: [[250, 1], [500, 3], [750, 4], [1500, 1]] },
+  'over-60': { cover: 'C', ages: [60, 79], gap: 5, kids: 0, want: [['HE', 75], ['H', 20], ['E', 5]], income: [4, 3, 2, 1],
+    hosp: (i, g) => [RND.pick(['retiree', 'retiree', 'midlife', g === 'F' ? 'women' : 'men'])], tier: [['Gold', 6], ['SilverPlus', 2], ['Silver', 1], ['BronzePlus', 1]],
+    extras: ['over-60s', 'over-60s', 'big-dental', 'checkups-glasses', 'dental-physio-specs'], addOns: [{ hear: 1 }, { o_mf: 1 }, { pod_i: 1, pod_s: 2 }, { d615: 1 }, { npbs: 4 }], excess: [[0, 2], [250, 2], [500, 4], [750, 1]], stays: 0.3 },
+  couple: { cover: 'C', ages: [26, 59], gap: 6, kids: 0, want: [['HE', 75], ['H', 15], ['E', 10]], income: [1, 2, 3, 2],
+    hosp: (i, g) => [RND.pick(['young', 'midlife', 'sport', g === 'F' ? 'women' : 'men', null])], tier: [['Basic', 1], ['BasicPlus', 2], ['Bronze', 3], ['BronzePlus', 3], ['Silver', 2], ['Gold', 1]],
+    extras: ['average', 'checkups-glasses', 'dental-only', 'dental-physio-specs', 'young-active', 'sport', 'big-dental', 'psych', 'paul'], excess: [[250, 1], [500, 2], [750, 4], [1500, 1]] },
+  'young-single': { cover: 'S', ages: [18, 30], kids: 0, want: [['HE', 70], ['H', 25], ['E', 5]], income: [4, 3, 1, 1],
+    hosp: () => [RND.pick(['young', 'sport', null, null])], tier: [['Basic', 3], ['BasicPlus', 4], ['Bronze', 2], ['BronzePlus', 1]],
+    extras: ['average', 'young-active', 'sport', 'dental-only', 'checkups-glasses', 'psych'], excess: [[500, 1], [750, 5]] },
+  active: { cover: 'S', ages: [20, 48], kids: 0, want: [['HE', 85], ['H', 10], ['E', 5]], income: [2, 3, 2, 1],
+    hosp: () => ['sport'], tier: [['Bronze', 3], ['BronzePlus', 3], ['Silver', 1], ['Gold', 1]],
+    extras: ['sport', 'young-active'], addOns: [{ p_s: 3 }, { rm_s: 3 }, { c_i: 1, c_s: 3 }, { os_i: 1, os_s: 2 }, { ep_i: 1, ep_s: 4 }, { orth: 1 }, { hmp: 1 }], excess: [[500, 1], [750, 4]] },
+  'mental-health': { cover: 'S', ages: [19, 50], kids: 0, want: [['HE', 75], ['E', 15], ['H', 10]], income: [3, 3, 2, 1],
+    hosp: () => [RND.pick(['mental', null])], tier: [['Basic', 2], ['BasicPlus', 4], ['Bronze', 2], ['Silver', 1], ['Gold', 1]],
+    extras: ['psych'], addOns: [{ ps_s: 4 }, { di_i: 1, di_s: 2 }, { d012: 1, d114: 1 }, { ac_i: 1, ac_s: 3 }], excess: [[500, 1], [750, 4]] },
+  basics: { cover: 'S', ages: [28, 69], kids: 0, want: [['HE', 70], ['E', 25], ['H', 5]], income: [3, 3, 2, 1],
+    hosp: (i, g) => [RND.pick(['midlife', g === 'F' ? 'women' : 'men', null, null])], tier: [['Basic', 3], ['BasicPlus', 3], ['Bronze', 2], ['Silver', 1]],
+    extras: ['checkups-glasses', 'dental-only', 'average'], excess: [[250, 1], [500, 2], [750, 4]] },
+};
+// rough share of members by state, and the funds people there most often hold
+const RND_STATES = [['NSW', 31], ['VIC', 26], ['QLD', 20], ['WA', 11], ['SA', 7], ['TAS', 2], ['ACT', 2], ['NT', 1]];
+const RND_FUNDS = { MBP: 25, BUP: 22, HCF: 12, NIB: 9, AHM: 7, HBF: 4, GMH: 3, AUF: 3, CPS: 1 };
+const RND_LOCAL = { WA: { HBF: 45, CPS: 6 }, SA: { SPS: 10 }, TAS: { SLM: 12 }, VIC: { GMH: 6, LHS: 3, MDH: 2 }, NSW: { WFD: 3 }, QLD: { QCH: 6 } };
+const RND_TIERS = { Basic: 'Basic', BasicPlus: 'Basic', Bronze: 'Bronze', BronzePlus: 'Bronze', Silver: 'Silver', SilverPlus: 'Silver', Gold: 'Gold' };
+
+// a random policy someone in this state might hold now: fund weighted by market share, tier near what they need
+function rndHeld(all, kinds, tier) {
+  const ok = all.filter((p) => kinds.includes(p.k) && !p.corp && !p.restricted);
+  let pool = tier ? ok.filter((p) => p.h && baseTier(p.h.tier) === RND_TIERS[tier]) : ok;
+  if (!pool.length) pool = ok;
+  if (!pool.length) return null;
+  const w = { ...RND_FUNDS, ...(RND_LOCAL[S.stateCode] || {}) };
+  const funds = [...new Set(pool.map((p) => p.f))];
+  const f = RND.weighted(funds.map((x) => [x, w[x] || 1]));
+  return RND.pick(pool.filter((p) => p.f === f));
+}
+function rndUsage(ids, addOns) {
+  const u = {};
+  for (const id of ids) for (const [k, n] of Object.entries(EXTRAS_PRESETS.find((x) => x.id === id)?.usage || {})) u[k] = Math.max(u[k] || 0, n);
+  if (addOns && RND.chance(0.6)) for (const [k, n] of Object.entries(RND.pick(addOns))) u[k] = (u[k] || 0) + n;
+  // nudge counts a little so two people with the same pattern still differ
+  for (const k of Object.keys(u)) if (RND.chance(0.25)) u[k] = Math.max(k.endsWith('_i') || k === 'd881' ? 1 : 0, u[k] + RND.pick([-1, 1]));
+  for (const k of Object.keys(u)) if (!u[k]) delete u[k];
+  return u;
+}
+async function randomScenario(id) {
+  id = RND_PROFILES[id] ? id : RND.pick(Object.keys(RND_PROFILES));
+  const P = RND_PROFILES[id], label = PRESETS.find((x) => x.id === id)?.label || id;
+  const keep = { optsOpen: S.optsOpen, funds: [] };
+  S = { ...defaults(), ...keep, usage: {}, hospUse: {}, scen: [], example: false, fresh: false, blank: {}, wantPicked: true, preset: id, pickV: 1, mixV: 1, keepV: 1 };
+  const couple = P.cover === 'C' || P.cover === 'F';
+  S.stateCode = RND.weighted(RND_STATES);
+  S.cover = P.cover;
+  const a0 = RND.int(P.ages[0], P.ages[1]);
+  S.ages = [a0, couple ? Math.max(18, Math.min(AGE_MAX, a0 + RND.int(-P.gap, P.gap))) : a0];
+  S.kids = P.kids ? RND.int(P.kids[0], P.kids[1]) : 2;
+  S.gender = couple ? RND.weighted([[['M', 'F'], 46], [['F', 'M'], 46], [['M', 'M'], 4], [['F', 'F'], 4]]) : [RND.pick(['M', 'F']), 'F'];
+  if (id === 'family-plan' && !S.gender.includes('F')) S.gender = ['M', 'F'];
+  S.want = RND.weighted(P.want);
+  // income band, weighted per household (0 = lowest band)
+  const band = RND.weighted(P.income.map((w, i) => [i, w]));
+  S.income = incomeBands()[band][1];
+  S.incomeTyped = false;
+  if (RND.chance(0.2)) { S.income = Math.round((S.income * (0.85 + Math.random() * 0.3)) / 500) * 500; S.incomeTyped = true; } // an exact figure typed in
+  const adults = couple ? [0, 1] : [0];
+  const ks = kidStart();
+  const kidIdx = P.cover === 'F' ? Array.from({ length: S.kids }, (_, k) => ks + k) : [];
+  // hospital needs per person
+  const base = RND.weighted(P.tier);
+  const hpNames = {};
+  if (S.want !== 'E') {
+    for (const i of [...adults, ...kidIdx]) {
+      const u = (S.hospUse[i] = { cats: [], stays: 0, nights: 0 });
+      if (i < 2) setTier(u, base);
+      const names = i >= 2 ? [P.kidHosp] : P.hosp(i, S.gender[i]).filter(Boolean);
+      for (const n of names) {
+        const hp = HOSPITAL_PRESETS.find((x) => x.id === n);
+        if (!hp || (hp.female && S.gender[i] !== 'F') || (hp.male && S.gender[i] !== 'M')) continue;
+        if (n === 'pregnancy' && S.ages[i] >= 50) continue;
+        u.cats = [...new Set([...u.cats, ...hp.cats])];
+        (hpNames[i] ||= []).push(hp.label);
+      }
+      const need = tierForCats(u.cats);
+      if (i < 2 && tierRank(need) > tierRank(u.minTier || 'Basic')) u.minTier = need;
+      if (i < 2 && P.stays && RND.chance(P.stays)) { u.stays = 1; u.nights = RND.int(1, 6); }
+    }
+    S.hosp = { ...S.hosp, minTier: base, maxExcess: RND.weighted(P.excess), allowRestricted: RND.chance(0.1) };
+    S.hosp.noDayExcess = RND.chance(0.15);
+    if (kidIdx.length) S.hosp.noKidsExcess = RND.chance(0.3);
+    S.hperson = 0;
+  }
+  // extras use per person
+  const xNames = {};
+  if (S.want !== 'H') {
+    for (const i of adults) { const n = RND.pick(P.extras); xNames[i] = EXTRAS_PRESETS.find((x) => x.id === n)?.label; S.usage[i] = rndUsage([n], P.addOns); }
+    const brace = P.braces ? RND.pick(kidIdx) : -1;
+    for (const i of kidIdx) {
+      const n = i === brace ? 'braces' : RND.pick(P.kidExtras);
+      xNames[i] = EXTRAS_PRESETS.find((x) => x.id === n)?.label;
+      S.usage[i] = rndUsage([n], [{ sp_i: 1, sp_s: 5 }, { o_sv: 1 }, { d531: 1 }, { p_i: 1, p_s: 2 }, { ot_i: 1, ot_s: 4 }]);
+    }
+    for (const i of adults) if (S.ages[i] >= 45) { const u = S.usage[i]; if (u.o_sv && RND.chance(0.7)) { u.o_mf = u.o_sv; delete u.o_sv; } }
+  }
+  // what they hold now
+  const cv = couple && RND.chance(0.1) ? 'S' : P.cover;
+  const all = (await loadState(S.stateCode, cv)).filter((p) => p.cv === cv);
+  const heldTier = RND.weighted(P.tier);
+  const held = S.want === 'H' ? RND.weighted([['none', 35], ['H', 65]]) : S.want === 'E' ? RND.weighted([['none', 35], ['E', 65]]) : RND.weighted([['none', 30], ['same', 45], ['two', 15], ['H', 10]]);
+  const nm = (p) => (p.n.toLowerCase().startsWith(provName(p).toLowerCase()) || p.n.toLowerCase().startsWith(p.f.toLowerCase()) ? p.n : `${provName(p)} ${p.n}`);
+  const setHeld = (st, mine) => {
+    if (held === 'none') { st.noH = S.want !== 'E'; st.noE = S.want !== 'H'; return 'no cover'; }
+    const out = [];
+    let hp = null;
+    if (held !== 'E') { hp = rndHeld(mine, ['H'], heldTier); if (hp) { st.hFund = providerOf(hp); st.hKey = curKey(hp); out.push(nm(hp)); } }
+    if (held === 'H' && S.want === 'HE') { st.noE = true; out.push('no extras'); }
+    if (held === 'same' || held === 'two' || held === 'E') {
+      const same = held === 'same' && hp ? mine.filter((p) => p.k === 'E' && p.f === hp.f) : [];
+      const ep = same.length ? RND.pick(same) : rndHeld(mine, ['E']);
+      if (ep) { st.eFund = providerOf(ep); st.eKey = curKey(ep); out.push(nm(ep)); }
+    }
+    return out.join(' + ') || 'no cover';
+  };
+  S.cur = { cover: cv === P.cover ? '' : cv, hFund: '', hKey: '', eFund: '', eKey: '', hPaid: '', ePaid: '' };
+  const nowYou = setHeld(S.cur, all);
+  let nowPartner = '';
+  if (cv !== P.cover) { S.curP = { cover: 'S', hFund: '', hKey: '', eFund: '', eKey: '', hPaid: '', ePaid: '' }; nowPartner = setHeld(S.curP, all); }
+  // no cover for a couple or family: the partner has none either (the app asks about them separately)
+  else if (couple && held === 'none') S.curP = { cover: 'S', hFund: '', hKey: '', eFund: '', eKey: '', hPaid: '', ePaid: '', noH: S.want !== 'E', noE: S.want !== 'H' };
+  const holdsH = (st) => !!st.hKey;
+  // Lifetime Health Cover: no loading while held since 31; otherwise not sure, a figure from their fund, or none
+  S.lhc = [0, 0]; S.lhcSet = {};
+  const lhcTxt = [];
+  for (const i of adults) {
+    if (S.want === 'E' || S.ages[i] < 31) continue;
+    const has = holdsH(i === 1 && nowPartner ? S.curP : S.cur);
+    const max = Math.min(70, 2 * (S.ages[i] - 31));
+    const mode = has ? RND.weighted([['none', 75], ['some', 25]]) : RND.weighted([['unsure', 50], ['none', 20], ['some', 30]]);
+    if (mode === 'none') { S.lhc[i] = 0; S.lhcSet[i] = true; lhcTxt.push(`${i ? 'partner' : 'you'} no loading`); }
+    else if (mode === 'some' && max >= 2) { S.lhc[i] = 2 * RND.int(1, max / 2); S.lhcSet[i] = true; lhcTxt.push(`${i ? 'partner' : 'you'} ${S.lhc[i]}% loading`); }
+    else lhcTxt.push(`${i ? 'partner' : 'you'} not sure (assumed)`);
+  }
+  // like for like, funds, ambulance
+  if (holdsH(S.cur) && RND.chance(0.3)) { S.keep = adults.map(() => true).concat(couple ? [] : [false]); S.keepAns = 'yes'; S.keepAsk = { 0: 'yes', 1: 'yes' }; } else { S.keep = [false, false]; S.keepAns = 'no'; S.keepAsk = { 0: 'no', 1: 'no' }; }
+  S.preferred = RND.chance(0.25);
+  S.mixFunds = RND.chance(0.8);
+  S.split = couple && RND.chance(0.7);
+  S.amb = { trips: 0, cost: '', need: false };
+  if (!AMBULANCE.stateCovered.includes(S.stateCode) && RND.chance(id === 'over-60' ? 0.5 : 0.25)) { S.amb.need = true; S.amb.trips = RND.chance(0.3) ? 1 : 0; }
+  // what was rolled, in one line, so a tester can see the scenario at a glance
+  const who = (i) => (i === 0 ? 'you' : i === 1 && couple ? 'partner' : `child ${i - ks + 1}`);
+  const gw = { M: 'male', F: 'female' };
+  const ppl = adults.map((i) => `${who(i)} ${S.ages[i]} (${gw[S.gender[i]]})`).join(', ') + (kidIdx.length ? `, ${kidIdx.length} child${kidIdx.length > 1 ? 'ren' : ''}` : '');
+  const wantTxt = { HE: 'hospital and extras', H: 'hospital only', E: 'extras only' }[S.want];
+  const bands = incomeBands();
+  const incTxt = S.incomeTyped ? `${fmt(S.income)} income (typed)` : `income ${bands[rebateTier(S.income, couple ? 'F' : 'S', kidIdx.length)]?.[0] || fmt(S.income)}`;
+  const hTxt = S.want === 'E' ? '' : `Hospital: at least ${TIER_LABEL[base] || base}, ${S.hosp.maxExcess ? `excess up to ${fmt(S.hosp.maxExcess)}` : 'no excess'}${Object.keys(hpNames).length ? `; needs ${Object.entries(hpNames).map(([i, n]) => `${who(Number(i))}: ${n.join(', ')}`).join('; ')}` : ''}${Object.entries(S.hospUse).filter(([, u]) => u.stays).map(([i, u]) => `; ${who(Number(i))} expects a ${u.nights}-night stay`).join('')}${S.hosp.noDayExcess ? '; no same-day excess' : ''}${S.hosp.noKidsExcess ? '; no excess for children' : ''}${S.hosp.allowRestricted ? '; accepts restricted' : ''}.`;
+  const xTxt = S.want === 'H' ? '' : `Extras: ${Object.entries(xNames).map(([i, n]) => `${who(Number(i))} ${n}`).join(', ')}${S.preferred ? ', uses preferred providers' : ''}.`;
+  S.randomNote = `Random "${label}": ${S.stateCode}, ${ppl}, ${incTxt}, wants ${wantTxt}. Now: ${nowPartner ? `you ${nowYou}; partner ${nowPartner}` : nowYou}${S.keep.some(Boolean) ? ' (keep at least this cover)' : ''}.${lhcTxt.length ? ` Loading: ${lhcTxt.join(', ')}.` : ''} ${hTxt} ${xTxt}${S.amb.need ? ` Wants ambulance cover${S.amb.trips ? ' (1 trip expected)' : ''}.` : ''}${!S.mixFunds ? ' One fund only.' : ''}${couple && !S.split ? ' No separate policies.' : ''}`.replace(/\s+/g, ' ').trim();
+  const { person, hperson, ...rest } = S;
+  location.hash = `s-${await pack(rest)}`;
+  location.reload();
 }
 
 // ---------------------------------------------------------------- results
@@ -5600,9 +5796,9 @@ async function loadShared() {
   if (!h.startsWith('#s-')) return;
   try {
     const shared = await unpack(h.slice(3));
-    S = { ...defaults(), ...shared, example: false, fresh: false, blank: {}, optsOpen: false };
+    S = { ...defaults(), ...shared, example: false, fresh: false, blank: {}, optsOpen: shared.randomNote ? !!shared.optsOpen : false };
     save();
-    notify('Opened a shared comparison. Change anything you like.');
+    if (shared.randomNote) toast(`New random scenario: ${PRESETS.find((x) => x.id === shared.preset)?.label || 'household'}.`); else notify('Opened a shared comparison. Change anything you like.');
   } catch (e) {
     notify("The shared link couldn't be read, so your own settings are shown.");
   }
@@ -6678,7 +6874,7 @@ function initSections() {
     h.setAttribute('role', 'button');
     h.tabIndex = 0;
     const set = (open) => { sec.classList.toggle('collapsed', !open); h.setAttribute('aria-expanded', String(open)); };
-    set(S.secOpen[key] ?? startOpen.includes(name));
+    set(S.secOpen[key] ?? (startOpen.includes(name) || (!!S.randomNote && sec.contains($('presets'))))); // TESTING ONLY: a random scenario keeps Quick start open
     const flip = () => { const open = sec.classList.contains('collapsed'); S.secOpen[key] = open; set(open); save(); };
     h.addEventListener('click', flip);
     h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); flip(); } });
