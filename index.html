@@ -716,7 +716,7 @@ body.opts-open .optclose { display: block; }
   .opttab:hover { transform: none; }
 }
 @keyframes shade { from { opacity: 0; } to { opacity: 1; } }
-body.guiding .opttab { display: none; }
+body.guiding .opttab, body.home-screen .opttab, body.home-screen .optshade { display: none; }
 /* what-if bubbles on phones: scroll sideways rather than stacking */
 @media (max-width: 640px) {
   .scenbar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-right: -16px; }
@@ -1245,7 +1245,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
             <select id="kidsOn"><option value="">Not covered</option><option value="0">On your policy</option><option value="1">On partner's policy</option></select>
             <span class="hint">Not covered: you pay their services yourself. On a policy: a couples policy becomes a family one, or with separate policies, that parent's becomes single parent (priced that way).</span></div>
         </div>
-        <div class="field"><label for="income"><span id="income-lbl">Income for surcharge purposes</span> <button type="button" class="qi" data-g="income" aria-label="What counts as income?">?</button></label>
+        <div class="field"><label for="income"><span id="income-lbl">Income for Medicare levy surcharge purposes</span> <button type="button" class="qi" data-g="income" aria-label="What counts as income?">?</button></label>
           <div class="income-row"><select id="incomeBand" aria-label="Income band"></select><span class="money"><input type="number" id="income" min="0" step="1000" aria-label="Exact income"></span></div>
           <span class="hint" id="income-hint">Pick a band, or type an exact figure if you know it.</span></div>
         <details class="group" id="disc">
@@ -2988,7 +2988,7 @@ function syncVisibility() {
   $('clearAll').disabled = !anyUsage;
 
   $('kids-wrap').hidden = !hasKids();
-  $('income-lbl').textContent = S.cover === 'S' ? 'Your income for surcharge purposes' : 'Combined family income for surcharge purposes';
+  $('income-lbl').textContent = S.cover === 'S' ? 'Your income for Medicare levy surcharge purposes' : 'Combined family income for Medicare levy surcharge purposes';
   for (const b of $('want').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === S.want));
   $('hosp-sec').hidden = S.want === 'E';
   $('mix-wrap').hidden = S.want !== 'HE';
@@ -3533,7 +3533,7 @@ function evaluateCurrent() {
       usage: q.usage.filter((u) => persons.includes(u.person)),
       hospital: { ...q.hospital, stays: (q.hospital.stays || []).filter((st) => persons.includes(st.person)) },
       household: { ...h, adultAges: [h.adultAges[i]], lhc: [h.lhc?.[i] || 0], abdKept: [h.abdKept?.[i]], rebateTier: famTier },
-      // a partner without hospital cover pays the surcharge on their own income: we only know the combined
+      // a partner without hospital cover pays the Medicare levy surcharge on their own income: we only know the combined
       // income, so assume half each
       mlsIfNone: (q.mlsIfNone || 0) / 2, mlsEst: true,
     };
@@ -3637,7 +3637,8 @@ function render(list, anyMap, netMap, data, current) {
   const parts = [];
 
   if (flashes.length) parts.push(flashes.map((m, i) => `<div class="notice flash">${esc(m)}<button type="button" class="textbtn" data-flash="${i}" aria-label="Dismiss">Dismiss</button></div>`).join(''));
-  parts.push(`<div class="viewbar"><button type="button" class="optbtn" data-opts aria-expanded="${!!S.optsOpen}"><span class="optic" aria-hidden="true"></span>${S.optsOpen ? 'Hide options' : 'Edit options'}</button>${S.fresh ? '' : `
+  document.body.classList.toggle('home-screen', !!S.fresh);
+  parts.push(`<div class="viewbar">${S.fresh ? '<span></span>' : `<button type="button" class="optbtn" data-opts aria-expanded="${!!S.optsOpen}"><span class="optic" aria-hidden="true"></span>${S.optsOpen ? 'Hide options' : 'Edit options'}</button>`}${S.fresh ? '' : `
     <button type="button" class="linkbtn" id="shareBtn">Share this comparison</button>`}</div>
     <div class="notice" id="shareBox" hidden></div>`);
   lastList = list;
@@ -3650,7 +3651,7 @@ function render(list, anyMap, netMap, data, current) {
     const kidTier = rebateTier(S.income, 'F', S.kids);
     if (kidTier > 0) {
       const amt = mlsCost({ income: S.income, cover: 'F', dependants: S.kids });
-      parts.push(`<div class="notice warn"><b>Medicare levy surcharge warning:</b> your children aren't on any of these policies. To avoid the surcharge, you and all your dependants need hospital cover, so at your income you'd pay about <b>${fmt(amt)}</b> a year (${REBATE.mlsRates[kidTier]}% of income) on top of these totals. Set <b>Children's cover</b> to put them on a policy and avoid it.</div>`);
+      parts.push(`<div class="notice warn"><b>Medicare levy surcharge warning:</b> your children aren't on any of these policies. To avoid the Medicare levy surcharge, you and all your dependants need hospital cover, so at your income you'd pay about <b>${fmt(amt)}</b> a year (${REBATE.mlsRates[kidTier]}% of income) on top of these totals. Set <b>Children's cover</b> to put them on a policy and avoid it.</div>`);
     }
   }
   // Medicare levy surcharge
@@ -4016,6 +4017,7 @@ function footer() {
     <div><b>Rebate:</b> ${esc(REBATE.period)} rates and income thresholds. The rebate is applied after any age-based discount and isn't paid on the LHC loading.</div>
     <div><b>Not included:</b> doctors' gap fees for hospital treatment (specialist, surgeon and anaesthetist charges above the Medicare and fund benefit). These depend on your doctors and whether they use the fund's gap-cover scheme.</div>
     <div><b>How benefits are worked out:</b> where the government data lists the fund's benefit for an item, that figure is used. Items it doesn't list are estimated from the fund's other published benefits in the same category, and are marked as estimates. Annual limits are first-year limits. Network-provider prices use each fund's own published deals.</div>
+    <div><b>Tax:</b> the Medicare levy surcharge, your rebate tier and any Lifetime Health Cover loading depend on your income for Medicare levy surcharge purposes and your own circumstances. Check them with your tax adviser or the ATO before relying on these figures.</div>
     <div>General information only, not personal advice. Check the fund's Private Health Information Statement before you buy.</div>`;
 }
 
@@ -4747,9 +4749,10 @@ function renderHospPerson() {
 
 // Clear everything back to a blank form (state and income too, so the next client starts clean), then reload.
 function resetAll() {
-  S = { ...defaults(), usage: {}, example: false, preset: null, hospUse: {}, scen: [], funds: [], pick: null, fresh: true, optsOpen: true, mixV: 1, keepV: 1, wantPicked: false, blank: { cover: 1, state: 1, g0: 1, g1: 1, income: 1 } };
+  S = { ...defaults(), usage: {}, example: false, preset: null, hospUse: {}, scen: [], funds: [], pick: null, fresh: true, optsOpen: false, mixV: 1, keepV: 1, wantPicked: false, blank: { cover: 1, state: 1, g0: 1, g1: 1, income: 1 } };
   save();
-  location.reload();
+  // nothing is kept between visits, so starting again is a fresh load (without any share link in the address)
+  if (location.hash) location.replace(location.href.split('#')[0]); else location.reload();
 }
 
 // Pregnancy cover belongs with the female partner: if it's ticked for a male partner and the other
@@ -5330,7 +5333,7 @@ async function loadShared() {
 function saveInfo(c, best, np) {
   const row = (label, v, sign = '', strong = false) => `<span class="trow">${strong ? `<b>${label}</b>` : label}<b>${sign}${fmt(v)}</b></span>`;
   const parts = (r) => {
-    const p = [r.premium?.net >= 1 && `premiums ${fmt(r.premium.net)}`, r.total - (r.premium?.net || 0) - (r.mls || 0) >= 1 && `out-of-pocket ${fmt(r.total - (r.premium?.net || 0) - (r.mls || 0))}`, r.mls && `surcharge ${fmt(r.mls)}`].filter(Boolean);
+    const p = [r.premium?.net >= 1 && `premiums ${fmt(r.premium.net)}`, r.total - (r.premium?.net || 0) - (r.mls || 0) >= 1 && `out-of-pocket ${fmt(r.total - (r.premium?.net || 0) - (r.mls || 0))}`, r.mls && `Medicare levy surcharge ${fmt(r.mls)}`].filter(Boolean);
     return p.length ? `<small>${p.join(' + ')}</small>` : '';
   };
   const nowLbl = c.products.length ? 'What you pay now' : 'With no cover';
@@ -5342,7 +5345,7 @@ function saveInfo(c, best, np) {
     body = `<span class="tsec">${cov}</span>
       ${row('Now', np.yourSave + yourPart)}${row('With Option #1', yourPart, '−')}${row('Saving', np.yourSave, '', true)}
       <span class="tsec">${nw}</span>
-      ${row(`Now (${[np.mlsNow && 'surcharge', np.servicesNow >= 1 && 'services paid in full'].filter(Boolean).join(' + ') || 'nothing'})`, np.newNow)}${row('With Option #1', np.newPart, '−')}${row(np.better >= 0 ? 'Better off' : 'Net cost', Math.abs(np.better), '', true)}
+      ${row(`Now (${[np.mlsNow && 'Medicare levy surcharge', np.servicesNow >= 1 && 'services paid in full'].filter(Boolean).join(' + ') || 'nothing'})`, np.newNow)}${row('With Option #1', np.newPart, '−')}${row(np.better >= 0 ? 'Better off' : 'Net cost', Math.abs(np.better), '', true)}
       <span class="tsec tot">${row('Saving shown', np.head, '', true)}</span>
       ${np.better < 0 ? '<small>The new cover\'s net cost isn\'t taken off the headline; it\'s shown below the banner.</small>' : ''}`;
   } else {
@@ -5372,7 +5375,7 @@ function costBlock(r, compact) {
   if (r.extras?.outOfPocket) parts.push('gaps on services');
   if (r.hospital?.excess || r.hospital?.copay) parts.push('excess');
   if (r.ambulance) parts.push('ambulance');
-  if (r.mls) parts.push('surcharge');
+  if (r.mls) parts.push('Medicare levy surcharge');
   if (r.kidsCost) parts.push("children's services");
   return `<div class="costblk${compact ? ' compact' : ''}">
     <div class="kicker">Total cost per year</div>
@@ -5635,7 +5638,7 @@ function insightsPanel(list, cur, netMap) {
   // your existing cover
   if (cur && newParts(best)) {
     const np = newParts(best);
-    out.push({ icon: '&#36;', h: np.gain >= 1 && np.head > 0.5 ? `Save ${fmt(np.head)} a year with Option #1` : np.yourSave > 0.5 ? `Save ${fmt(np.yourSave)} a year on ${np.ni === 1 ? 'your' : "your partner's"} cover with Option #1` : `${np.ni === 1 ? 'Your own' : "Your partner's"} cover is already good value`, t: `${np.Who === 'You' ? 'Your' : "Your partner's"} new cover ${np.better >= 0 ? `leaves you ${fmt(np.better)} a year better off` : `costs a net ${fmt(-np.better)} a year`}${np.mlsNow ? ', as it ends the surcharge you both pay' : ''}.` });
+    out.push({ icon: '&#36;', h: np.gain >= 1 && np.head > 0.5 ? `Save ${fmt(np.head)} a year with Option #1` : np.yourSave > 0.5 ? `Save ${fmt(np.yourSave)} a year on ${np.ni === 1 ? 'your' : "your partner's"} cover with Option #1` : `${np.ni === 1 ? 'Your own' : "Your partner's"} cover is already good value`, t: `${np.Who === 'You' ? 'Your' : "Your partner's"} new cover ${np.better >= 0 ? `leaves you ${fmt(np.better)} a year better off` : `costs a net ${fmt(-np.better)} a year`}${np.mlsNow ? ', as it ends the Medicare levy surcharge you both pay' : ''}.` });
   } else if (cur) {
     const d = cur.total - best.total;
     if (d > 0.5 && !noCoverNow && isUpgradeOn(best, cur)) out.push({ icon: '&#11014;', h: `Option #1 beats your cover on price and cover`, t: `${fmt(d)} a year less, more hospital cover, no higher excess.` });
@@ -5756,7 +5759,7 @@ function insightsPanel(list, cur, netMap) {
     } else if (S.want !== 'E' && !cur && q.mlsIfNone > 0 && !best.split) {
       const hps = best.products.filter((x) => x.k !== 'E');
       const hprem = S.want === 'H' ? best.premium.net : hps.length === 1 && hps[0].k === 'H' ? premiumFor(hps[0], q.household).net : 0;
-      if (hprem > 0 && hprem < q.mlsIfNone - 1) out.push({ icon: '&#36;', h: `Hospital cover beats the surcharge by ${fmt(q.mlsIfNone - hprem)} a year`, t: `Without it you'd pay a ${fmt(q.mlsIfNone)} Medicare levy surcharge; Option #1's hospital cover costs ${fmt(hprem)}.` });
+      if (hprem > 0 && hprem < q.mlsIfNone - 1) out.push({ icon: '&#36;', h: `Hospital cover beats the Medicare levy surcharge by ${fmt(q.mlsIfNone - hprem)} a year`, t: `Without it you'd pay a ${fmt(q.mlsIfNone)} Medicare levy surcharge; Option #1's hospital cover costs ${fmt(hprem)}.` });
     }
   }
   // never empty: how #1 adds up
@@ -6065,7 +6068,7 @@ const GUIDE_STEPS = [
     html: () => {
       renderIncomeBands();
       const opts = [...$('incomeBand').options].filter((o) => o.value);
-      return `<div class="gchips">${opts.map((o, i) => gChip(o.value, esc(o.textContent), !S.blank?.income && o.selected, ['Highest rebate', 'Rebate tier 1', 'Rebate tier 2', 'No rebate · surcharge without hospital cover'][i] || '')).join('')}</div>
+      return `<div class="gchips">${opts.map((o, i) => gChip(o.value, esc(o.textContent), !S.blank?.income && o.selected, ['Highest rebate', 'Rebate tier 1', 'Rebate tier 2', 'No rebate · Medicare levy surcharge without hospital cover'][i] || '')).join('')}</div>
         <div class="gfield"><label class="glbl" for="gIncome">Or enter it exactly <span class="gopt">optional</span></label><div class="gmoney"><span>$</span><input type="number" id="gIncome" min="0" step="1000" value="${S.incomeTyped ? S.income : ''}" placeholder="${S.incomeTyped || S.blank?.income ? '' : S.income}"></div></div>`;
     },
     bind: (el) => {
