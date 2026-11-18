@@ -4132,7 +4132,7 @@ function render(list, anyMap, netMap, data, current) {
         if (Math.abs(own - list[0].total) >= 1) out.push(`From Year 2: this option ${c.total - own >= 1 ? `saves ${fmt(c.total - own)} a year` : `costs ${fmt(own - c.total)} a year more than ${c.products.length ? 'now' : 'having no cover'}`}.`);
         if (y2Top != null && own - y2Top >= 1) out.push(`From Year 2, a different option is cheapest: ${c.total - y2Top >= 1 ? `it saves ${fmt(c.total - y2Top)} a year` : `it costs ${fmt(y2Top - c.total)} a year more`}, but costs more in Year 1. Choose “From Year 2” below to see it.`);
         return out.length ? `<span class="sm bsnote">${out.join(' ')}</span>` : '';
-      })() : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">${(() => { const d = c.total - yr1(list[0]); return d >= 1 ? `Year 1: Saves ${fmt(d)}` : `Year 1: Costs ${fmt(-d)} more than ${c.products.length ? 'now' : 'having no cover'}`; })()}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 ? `<div class="bigsave same costs"><div>In Year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From Year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
+      })() : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">${(() => { const d = c.total - yr1(list[0]); return d >= 1 ? `Year 1: Saves ${fmt(d)}` : `Year 1: Costs ${fmt(-d)} more than ${c.products.length ? 'now' : 'having no cover'}`; })()}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 && !netCoverCase() ? `<div class="bigsave same costs"><div>In Year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From Year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length && S.want !== 'E' ? `<div class="bigsave same"><div>Cover for a net ${fmt(list[0].total - c.total)} ${rankY1 ? 'in Year 1' : 'a year'} <span class="sm bsnote">${netCoverWhy(c, list[0])}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
       <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing' : 'with no'}</span> <span class="nowfig"><span class="nowlbl">cover</span> <b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</span></div></div>
       <p class="nowsave">${!c.products.length || np0 || curMissNow.length || c.products.some((p) => p.closed || p.corp || p.restricted) ? '' : (pos <= 1 ? 'Nothing costs less for what you use.' : `${(pos - 1).toLocaleString('en-AU')} of ${list.length.toLocaleString('en-AU')} ${S.keep?.some(Boolean) || keepPending() ? 'options with cover at least as good as yours' : 'options'} cost less for what you use.`)}${likeForLike(c, list)}</p>
     </section>`);
@@ -5475,7 +5475,7 @@ function yr1Vs(r) {
   const f = yr1(r);
   if (f == null || !curNow) return '';
   const d = curNow.total - f;
-  return d >= 1 ? `Year 1: save ${fmt(d)} (waiting periods)` : `Year 1: ${fmt(-d)} more than ${noCoverNow ? 'having no cover' : 'now'} (waiting periods)`;
+  return d >= 1 ? `Year 1: save ${fmt(d)} (waiting periods)` : netCoverCase() ? `Year 1: ${fmt(-d)} net (waiting periods)` : `Year 1: ${fmt(-d)} more than ${noCoverNow ? 'having no cover' : 'now'} (waiting periods)`;
 }
 // First-year cost after switching, when waiting periods make it higher than the ongoing cost.
 function firstYearLine(r) {
@@ -5893,6 +5893,18 @@ function tierForCats(cats) {
 }
 
 // ---------------------------------------------------------------- savings and summary
+// No cover now and hospital cover wanted: going without always looks cheaper, because it leaves out the hospital
+// care itself. Show what the cover costs instead: its net cost after the surcharge it ends and what extras pay back.
+const netCoverCase = () => noCoverNow && S.want !== 'E';
+function netCoverWhat(short) {
+  const preg = [0, 1].some((i) => plansPregnancy(i));
+  return `${S.want === 'HE' ? 'hospital and extras cover' : 'hospital cover'}${preg ? (short ? ' incl. pregnancy' : ' including pregnancy and birth') : ''}`;
+}
+function netCoverWhy(c, r) {
+  const preg = [0, 1].some((i) => plansPregnancy(i));
+  const offs = [c.mls >= 1 && `the ${fmt(c.mls)} Medicare levy surcharge it ends`, S.want === 'HE' && 'what its extras pay back'].filter(Boolean);
+  return `That's Option #1's ${fmt(r.premium?.net || 0)} in premiums${offs.length ? `, less ${offs.join(' and ')}` : ''}, compared with going without. For it you get ${netCoverWhat()}; without cover, any hospital stay${preg ? ', including the birth,' : ''} is yours to pay for or to wait for in the public system.`;
+}
 function saveBadge(r) {
   if (!curNow || r === curNow) return '';
   const np = newParts(r);
@@ -5914,10 +5926,11 @@ function saveBadge(r) {
   const d = curNow.total - r.total;
   if (Math.abs(d) < 1) return '<div class="savebadge same">Same cost as your existing cover</div>';
   const y2 = yr2(r);
-  const y2line = y2 != null && Math.abs(y2 - r.total) >= 1 ? `<span class="yr2">From Year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : `${fmt(y2 - curNow.total)} a year more than ${noCoverNow ? 'having no cover' : 'now'}`}</span>` : '';
+  const y2line = y2 != null && Math.abs(y2 - r.total) >= 1 ? `<span class="yr2">From Year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : netCoverCase() ? `${fmt(y2 - curNow.total)} a year net` : `${fmt(y2 - curNow.total)} a year more than ${noCoverNow ? 'having no cover' : 'now'}`}</span>` : '';
   if (rankY1) {
     const vs = noCoverNow ? 'having no cover' : 'your existing cover';
     return d > 0 ? `<div class="savebadge good">Save <b>${fmt(d)}</b> in Year 1 <span>vs ${vs}</span>${y2line}</div>`
+      : netCoverCase() ? `<div class="savebadge adds"><b>+${fmt(-d)}</b> net in Year 1 <span>for ${netCoverWhat(true)}, over going without</span>${y2line}</div>`
       : `<div class="savebadge bad"><b>${fmt(-d)}</b> more in Year 1 <span>than ${vs} (waiting periods)</span>${y2line}</div>`;
   }
   const y1 = yr1Vs(r);
@@ -5927,6 +5940,8 @@ function saveBadge(r) {
       ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr <span>adds hospital cover (you have none now)</span></div>`
       : curMissNow.length && !coverDrops(r).length
       ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr <span>adds ${esc(listCats(curMissNow.filter((c) => (catsY(r) || []).includes(c)), 99) || 'the cover you asked for')}</span></div>`
+      : netCoverCase()
+      ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr net <span>for ${netCoverWhat(true)}, over going without</span>${y1 ? `<span class="yr1">${y1}</span>` : ''}</div>`
       : `<div class="savebadge bad"><b>${fmt(-d)}</b>/yr more <span>than ${noCoverNow ? 'having no cover' : 'your existing cover'}</span></div>`;
 }
 
@@ -6162,6 +6177,7 @@ function insightsPanel(list, cur, netMap) {
     }
     else if (noHospNow()) out.push({ icon: '&#43;', h: `Adding hospital cover costs ${fmt(-d)} a year more`, t: `You have extras only now. Option #1 is the cheapest way to add hospital cover${cur.mls ? ` (and it ends the ${fmt(cur.mls)} Medicare levy surcharge you pay now)` : ''}.` });
     else if (curMissNow.length) out.push({ icon: '&#43;', h: `Adding ${esc(listCats(curMissNow, 99))} costs ${fmt(-d)} a year more`, t: 'Your current cover doesn\'t include it; Option #1 is the cheapest that does.' });
+    else if (netCoverCase()) out.push({ icon: '&#36;', h: `Option #1 gives you ${netCoverWhat()} for a net ${fmt(-d)} a year`, t: netCoverWhy(cur, best) });
     else if (noCoverNow) out.push({ icon: '&#36;', h: `Going without cover costs ${fmt(-d)} a year less`, t: S.want === 'E' ? 'For the services you use, extras cost more than they pay back.' : `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` });
     else out.push({ icon: '&#10003;', h: 'Your cover is already good value', t: `Nothing in the rankings costs less for what you use.` });
   }
