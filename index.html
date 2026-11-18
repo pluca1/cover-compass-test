@@ -7059,7 +7059,8 @@ function factRows(r, other, vsSelf) {
     if (!xp) rows.push(['xval', 'Extras', 'No extras policy: you pay for services yourself']);
     else {
       const d = r.extras.totalBenefit - xp.net;
-      rows.push(['xval', 'Extras', `<span class="${d >= 0 ? 'save' : 'cost'}">Get back ${xp.est ? 'about ' : ''}${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than you pay in extras premiums</span>`]);
+      const pct = r.extras.totalFees ? Math.round((100 * r.extras.totalBenefit) / r.extras.totalFees) : 0;
+      rows.push(['xval', 'Extras', `<span class="save">Get back ${xp.est ? 'about ' : ''}${pct}% of the cost of your services</span><span class="hint wsub">${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than the extras premium</span>`]);
     }
   }
   {
