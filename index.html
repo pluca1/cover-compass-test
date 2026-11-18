@@ -3454,6 +3454,9 @@ async function compute() {
     const fyQ = query(S.preferred); fyQ.firstYear = true;
     const fyList = rankAll(fyQ);
     const first = new Map(fyList.map((r) => [keyOf(r), r.total]));
+    // the first-year ranking only pairs the policies that are cheapest in year 1, so options near the top of the
+    // normal ranking can be missing from it: work theirs out directly
+    for (const r of list.slice(0, 120)) if (!first.has(keyOf(r))) first.set(keyOf(r), firstYearTotal(r, fyQ));
     const ongoing = new Map((S.preferred ? net : any).map((r) => [keyOf(r), r.total]));
     // the cheapest option on a normal year would cost a lot more in its first year: rank on year 1 (unless asked not to)
     const heavy = (first.get(keyOf(list[0])) ?? list[0].total) - list[0].total >= Y1_TRIGGER;
@@ -4274,10 +4277,10 @@ function sideBySide(cur, top, q, list = top, picked = false) {
   if (rankY1) {
     rows.push(row('From year 2<span class="sm">once waiting periods are served</span>', (r) => (r === cur ? '–' : yr2(r) != null ? fmt(yr2(r)) : '–'), 'num'));
   } else if (whatIf?.first && top.some((r) => (whatIf.first.get(keyOf(r)) ?? r.total) > r.total + 0.5)) {
-    rows.push(row('First year after switching<span class="sm">waiting periods on new extras</span>', (r) => {
+    rows.push(row('Waiting periods<span class="sm">extra cost in year 1 on a new policy</span>', (r) => {
       if (r === cur) return '–';
       const f = whatIf.first.get(keyOf(r));
-      return f == null || f <= r.total + 0.5 ? 'No extra cost' : `<span class="cost">${fmt(f)}</span>`;
+      return f == null || f <= r.total + 0.5 ? 'No effect on your services' : `<span class="cost">+${fmt(f - r.total)}</span><span class="sm">${fmt(f)} in year 1</span>`;
     }, 'num'));
   }
   if (cur) rows.push(row(noCoverNow ? 'Compared with having no cover' : 'Compared with your existing cover', (r) => {
@@ -5035,6 +5038,25 @@ function waitDetails(r) {
   return `<details class="more" data-row="card-wait"><summary>${title}${w.length ? ` (${w.length})` : ''}</summary>${body}</details>`;
 }
 
+// An option's first-year total: its extras re-priced with waiting periods (services in a wait pay nothing).
+// Separate policies: each person's extras on their own policy.
+function firstYearTotal(r, q) {
+  const delta = (products, ex, usage) => {
+    const ep = products.find((p) => p.k === 'E' || p.k === 'C');
+    if (!ep || !ex) return 0;
+    const fy = extrasBenefits(ep, usage, { fees: q.fees, preferred: q.preferred, firstYear: true, served: q.served });
+    return fy.outOfPocket - ex.outOfPocket;
+  };
+  if (r.split) {
+    // part i is partner i's own policy, where they become person 0 (children keep their numbers, on a single-parent policy)
+    return r.total + r.split.reduce((t, x, i) => {
+      const withKids = x.products.some((p) => p.cv === 'SP' || p.cv === 'F');
+      const usage = (q.usage || []).filter((u) => u.person === i || (withKids && u.person >= 2)).map((u) => ({ ...u, person: u.person === i ? 0 : u.person }));
+      return t + delta(x.products, x.extras, usage);
+    }, 0);
+  }
+  return r.total + delta(r.products, r.extras, q.usage || []);
+}
 // Ranked on year 1: what this option costs a year from year 2 (null otherwise)
 function yr2(r) {
   if (!rankY1) return null;
@@ -6955,14 +6977,14 @@ function factRows(r, other, vsSelf) {
     }
   }
   if (rankY1) rows.push(['first', 'From year 2', yr2(r) != null ? `${fmt(yr2(r))} a year` : '–']);
-  else if (whatIf?.first) rows.push(['first', 'First year (waiting periods)', f != null && f > r.total + 0.5 ? `<span class="cost">${fmt(f)} (+${fmt(f - r.total)})</span>` : 'No extra cost']);
+  else if (whatIf?.first) rows.push(['first', 'Waiting periods', f != null && f > r.total + 0.5 ? `<span class="cost">+${fmt(f - r.total)} in year 1</span> <span class="hint">(${fmt(f)} total)</span>` : 'No effect on your services']);
   if (lo && hi) rows.push(['whatif', 'If you use less / more', Math.max(lo.rank, hi.rank) <= 10 ? 'Stays in the top 10' : `Ranks #${lo.rank} / #${hi.rank}`]);
   if (vsSelf != null) rows.push(['self', 'vs paying for services yourself', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${vsSelf >= 0 ? '' : '+'}${fmt(Math.abs(vsSelf))} ${vsSelf >= 0 ? 'less' : 'more'}</span>`]);
   return rows;
 }
-const FACT_LABEL = { pref: 'At preferred providers', xval: 'Extras', first: 'First year (waiting periods)', whatif: 'If you use less / more', self: 'vs paying for services yourself' };
+const FACT_LABEL = { pref: 'At preferred providers', xval: 'Extras', first: 'Waiting periods', whatif: 'If you use less / more', self: 'vs paying for services yourself' };
 // what a blank row means for a card that doesn't have it
-const FACT_BLANK = { pref: 'No difference', first: 'No extra cost' };
+const FACT_BLANK = { pref: 'No difference', first: 'No effect on your services' };
 function cardFacts(r, other, vsSelf) {
   let rows = factRows(r, other, vsSelf);
   if (factKeys) {
