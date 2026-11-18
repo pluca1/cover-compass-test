@@ -1636,8 +1636,9 @@ const PRESETS = [
   },
   {
     id: 'braces', label: 'Kids with braces',
-    desc: "Family where one child is getting braces. Orthodontics usually has a 12-month waiting period and a lifetime limit per person, so a new policy won't pay for braces that start in the next 12 months: check the year-1 figures.",
-    cover: 'F', ages: [44, 42], kids: 2, want: 'E',
+    desc: "Family where one child is getting braces. Orthodontics usually has a 12-month waiting period and a lifetime limit per person, so a new policy won't pay for braces that start in the next 12 months: check the year-1 figures. Bronze hospital cover for the family, which covers tonsils, grommets and broken bones.",
+    cover: 'F', ages: [44, 42], kids: 2, want: 'HE',
+    hosp: { minTier: 'Bronze', maxExcess: 750 }, hospUse: { 2: { cats: ['TonsilsAdenoidsGrommets'] }, 3: { cats: ['TonsilsAdenoidsGrommets'] } },
     usage: {
       0: { d012: 1, d114: 1 }, 1: { d012: 1, d114: 1 },
       2: { d881: 1, d012: 2, d114: 2 }, 3: { d012: 2, d114: 2, d121: 1 },
@@ -1655,6 +1656,13 @@ const PRESETS = [
     },
   },
   {
+    id: 'couple', label: 'Couple, no kids',
+    desc: 'Couple without children: dental check-ups and cleans each, a short course of physio and new glasses, with Bronze hospital cover.',
+    cover: 'C', ages: [42, 40], want: 'HE',
+    hosp: { minTier: 'Bronze', maxExcess: 750 }, hospUse: {},
+    usage: { 0: { d012: 1, d114: 1, d022: 1, p_i: 1, p_s: 3 }, 1: { d012: 1, d114: 1, d022: 1, o_sv: 1 } },
+  },
+  {
     id: 'young-single', label: 'Young single',
     desc: 'Single under 30: basic hospital cover to avoid the Medicare levy surcharge and lock in no LHC loading, plus a dental check-up and some physio.',
     cover: 'S', ages: [27], want: 'HE',
@@ -1663,20 +1671,23 @@ const PRESETS = [
   },
   {
     id: 'active', label: 'Active & sporty',
-    desc: 'Regular physio and remedial massage for sport, plus dental basics.',
-    cover: 'S', ages: [34], want: 'E',
+    desc: 'Regular physio and remedial massage for sport, plus dental basics. Bronze hospital cover, which includes knee and shoulder reconstructions and other bone, joint and muscle surgery.',
+    cover: 'S', ages: [34], want: 'HE',
+    hosp: { minTier: 'Bronze', maxExcess: 750 }, hospUse: { 0: { cats: ['JointReconstructions', 'BoneJointMuscle'] } },
     usage: { 0: { d012: 1, d114: 1, p_i: 1, p_s: 5, rm_i: 1, rm_s: 5 } },
   },
   {
     id: 'mental-health', label: 'Mental health support',
-    desc: 'Ten psychology sessions a year on top of any Medicare-funded sessions, plus dental basics.',
-    cover: 'S', ages: [30], want: 'E',
+    desc: 'Ten psychology sessions a year on top of any Medicare-funded sessions, plus dental basics, with basic hospital cover.',
+    cover: 'S', ages: [30], want: 'HE',
+    hosp: { minTier: 'Basic', maxExcess: 750 }, hospUse: {},
     usage: { 0: { d012: 1, d114: 1, ps_i: 1, ps_s: 9 } },
   },
   {
     id: 'basics', label: 'Glasses & dental basics',
-    desc: 'Two check-ups and cleans and a new pair of glasses.',
-    cover: 'S', ages: [45], want: 'E',
+    desc: 'Two check-ups and cleans and a new pair of glasses, with basic hospital cover.',
+    cover: 'S', ages: [45], want: 'HE',
+    hosp: { minTier: 'Basic', maxExcess: 750 }, hospUse: {},
     usage: { 0: { d012: 2, d114: 2, o_sv: 1 } },
   },
 ];
