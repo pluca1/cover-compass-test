@@ -631,7 +631,7 @@ body.guiding { overflow: hidden; }
 .textbtn:disabled { color: var(--muted); cursor: default; text-decoration: none; }
 .mid { color: var(--warn); font-weight: 700; }
 .tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 6px; border-radius: 4px; background: var(--gold-soft); color: var(--warn); margin-left: 4px; vertical-align: 1px; }
-footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; display: flex; flex-direction: column; gap: 6px; max-width: 90ch; }
+footer { margin-top: 28px; color: var(--muted); font-size: 12.5px; display: flex; flex-direction: column; gap: 6px; max-width: none; }
 footer a { color: var(--accent); }
 .loading { padding: 40px; text-align: center; color: var(--muted); }
 @media (min-width: 921px) { .inputs { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px); overflow: auto; } }
@@ -854,6 +854,11 @@ tr.hgrp td { vertical-align: top; }
 .restdet > summary::-webkit-details-marker { display: none; }
 .restdet > summary .ph::before { content: '▸ '; color: var(--accent); }
 .restdet[open] > summary .ph::before { content: '▾ '; }
+.restsort { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 4px 16px 8px; }
+.restsort .seg { flex: 0 0 auto; display: inline-flex; padding: 0; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); gap: 0; }
+.restsort .seg button { flex: 0 0 auto; padding: 5px 12px; border-radius: 0; font-size: 12.5px; box-shadow: none; }
+.restsort .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.restsort .hint { flex: 1 1 260px; min-width: 0; font-size: 12px; }
 .rk { font: inherit; font-weight: 700; color: var(--accent); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 .flashrow { animation: flashrow 1.6s ease; }
 @keyframes flashrow { 0%, 40% { background: var(--accent-soft); box-shadow: 0 0 0 3px var(--accent); } 100% { background: transparent; box-shadow: none; } }
@@ -3475,6 +3480,17 @@ async function compute() {
     const hi = rankAll(scaled(1.5, Math.ceil));
     const pos = (l) => new Map(l.map((r, i) => [keyOf(r), { total: r.total, rank: i + 1 }]));
     whatIf = { lo: pos(lo), hi: pos(hi), first, ongoing };
+    // options near the top that the lighter/heavier re-rankings didn't pair: price them directly and place them
+    for (const [m, l, q] of [[whatIf.lo, lo, scaled(0.5, Math.floor)], [whatIf.hi, hi, scaled(1.5, Math.ceil)]]) {
+      const totals = l.map((x) => x.total);
+      for (const r of list.slice(0, 120)) {
+        if (m.has(keyOf(r))) continue;
+        const t = repricedTotal(r, q, rankY1);
+        let a = 0, z = totals.length;
+        while (a < z) { const mid = (a + z) >> 1; if (totals[mid] < t) a = mid + 1; else z = mid; }
+        m.set(keyOf(r), { total: t, rank: a + 1 });
+      }
+    }
     // most consistent: the option whose worst position across the three usage levels is best
     let best = null;
     list.slice(0, 60).forEach((r, i) => {
@@ -3925,11 +3941,18 @@ function render(list, anyMap, netMap, data, current) {
     const sa = $('showAll');
     if (sa) sa.addEventListener('click', () => setKeepAns('no'));
     for (const b of document.querySelectorAll('[data-rankon]')) b.addEventListener('click', () => { S.rankOn = b.dataset.rankon; save(); changed(); });
+    for (const b of document.querySelectorAll('[data-restsort]')) b.addEventListener('click', () => { S.restSort = b.dataset.restsort; save(); render(...lastRender); });
+    const sd = document.querySelector('.sbsdet');
+    if (sd) sd.addEventListener('toggle', () => { S.sbsShut = !sd.open; save(); });
   });
 
-  const rest = list.filter((r) => !topNow.includes(r)).slice(0, 17);
+  const others = list.filter((r) => !topNow.includes(r));
+  const byBest = S.restSort === 'best';
+  const rest = byBest
+    ? others.slice(0, 120).map((r) => ({ r, v: valueScore(r, list[0]) })).sort((a, b) => b.v - a.v).slice(0, 17).map((x) => x.r)
+    : others.slice(0, 17);
   if (rest.length) {
-    parts.push(`<section class="panel rest-panel"><details class="restdet" open><summary><h2 class="ph">Next best <span class="hint">Options #${list.indexOf(rest[0]) + 1} to #${list.indexOf(rest[rest.length - 1]) + 1}, apart from the cards above</span></h2></summary><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Hover over a gap payment figure to see what the fund pays.</p><div class="table-wrap"><table class="rest">
+    parts.push(`<section class="panel rest-panel"><details class="restdet" open><summary><h2 class="ph">More options</h2></summary><div class="restsort"><span class="seg" role="group" aria-label="Sort by"><button type="button" data-restsort="price" aria-pressed="${!byBest}">Cheapest first</button><button type="button" data-restsort="best" aria-pressed="${byBest}">Best value first</button></span><span class="hint">${byBest ? `The ${rest.length} best value after the cards above: price weighed against cover, extras, waiting periods and how each holds up if your usage changes. Option numbers are price ranks.` : `The next ${rest.length} by price (Options #${list.indexOf(rest[0]) + 1} to #${Math.max(...rest.map((r) => list.indexOf(r) + 1))}), apart from the cards above.`}</span></div><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Hover over a gap payment figure to see what the fund pays.</p><div class="table-wrap"><table class="rest">
       <thead><tr><th>Compare</th><th>Option</th><th>Policy</th><th class="n" title="What you'd pay the fund in a year, after your rebate">Premiums</th><th class="n" title="What you'd still pay yourself in a year: gaps on your services after the fund's benefits, plus any excess">Gap payments</th><th class="n" title="Premiums plus what you'd still pay yourself for services (and any excess)">${rankY1 ? 'Year 1 total' : 'Total'}</th></tr></thead>
       <tbody>${rest.map((r) => `<tr data-rank="${list.indexOf(r) + 1}"><td>${pickBox(r, true)}</td><td>${list.indexOf(r) + 1}</td><td>${restName(r)}</td>
         <td class="n" data-l="Premiums">${fmt(r.premium.net)}</td><td class="n" data-l="Gap payments"${r.extras?.totalFees ? ` title="The fund pays ${fmt(r.extras.totalBenefit || 0)} of your ${fmt(r.extras.totalFees)} in services"` : ''}>${fmt(Math.max(0, r.total - r.premium.net))}</td><td class="n" data-l="Total"><b>${fmt(r.total)}</b></td></tr>`).join('')}</tbody></table></div></details></section>`);
@@ -4386,11 +4409,11 @@ function sideBySide(cur, top, q, list = top, picked = false) {
   const pc = prosCons(cur, top);
   const glanceRow = `<tr class="pcrow"><td>At a glance<span class="sm">${cur ? (noCoverNow ? 'compared with having no cover' : 'compared with your existing cover') : `compared with Option #${topNowRank(top, top[0])}`}</span></td>${cols.map((c) => `<td class="${c.cls}">${c.r === cur ? curGlance(c.r) : pc.get(c.r) || ''}</td>`).join('')}</tr>`;
   const head = cols.map((c) => `<th class="${c.cls}"><div class="thtop"><span class="thk">${c.head}${c.r === cur ? '' : `<button type="button" class="unpick" data-unpick="${esc(keyOf(c.r))}" aria-label="Remove ${esc(c.head)} from the comparison" title="Remove from comparison">&times;</button>`}</span><b>${!c.r.products.length ? 'No cover now' : c.r.split ? 'Two separate policies' : c.r.mixed ? 'Two policies · 2 funds' : 'One policy'}</b></div>${!c.r.products.length ? `<div class="nocov">You pay for your services yourself${c.r.mls ? ', plus the Medicare levy surcharge' : ''}.</div>` : c.r.split ? splitBlocks(c.r) : oneBlock(c.r)}${c.r.products.some((p) => notOpenNote(p)) ? `<span class="hint">${esc(notOpenNote(c.r.products.find((p) => notOpenNote(p))).replace(/^./, (x) => x.toUpperCase()))}</span>` : ''}</th>`).join('');
-  return `<section class="panel sbs-panel${picked ? ' picked' : ''}"><h2 class="ph">${cur ? 'Compare to existing' : 'Compare options'}</h2>
+  return `<section class="panel sbs-panel${picked ? ' picked' : ''}"><details class="restdet sbsdet"${S.sbsShut ? '' : ' open'}><summary><h2 class="ph">${cur ? 'Compare to existing' : 'Compare options'}</h2></summary>
     <p class="pickline">${picked ? `Showing the ${top.length} option${top.length === 1 ? '' : 's'} you picked. <button type="button" class="linkbtn" id="pickReset">Back to the top 3</button>` : 'Showing the top 3. Untick one on its card to take it out, or tick any option in the list below to add it (up to 3).'}</p>
     <p class="hint" style="padding:4px 16px 0;margin:0">If you switch, waiting periods you've already served carry over for the same level of cover. You'd serve new waits only on benefits that are higher or new.</p>
     <p class="sbs-scroll${cols.length > 4 ? '' : ' mob'}">${cols.length > 4 ? 'Scroll sideways to see every option' : 'Swipe sideways to see each option'} &rarr;</p>
-    <div class="sbs-wrap"><table class="sbs" style="min-width:${140 + cols.length * (cols.length > 4 ? 165 : 120)}px"><thead><tr><th></th>${head}</tr></thead><tbody>${glanceRow}${rows.join('')}</tbody></table></div></section>`;
+    <div class="sbs-wrap"><table class="sbs" style="min-width:${140 + cols.length * (cols.length > 4 ? 165 : 120)}px"><thead><tr><th></th>${head}</tr></thead><tbody>${glanceRow}${rows.join('')}</tbody></table></div></details></section>`;
 }
 
 // ---------------------------------------------------------------- what makes up "back" and "gap"
@@ -5040,11 +5063,14 @@ function waitDetails(r) {
 
 // An option's first-year total: its extras re-priced with waiting periods (services in a wait pay nothing).
 // Separate policies: each person's extras on their own policy.
-function firstYearTotal(r, q) {
+function firstYearTotal(r, q) { return repricedTotal(r, q, true); }
+// An option's total with its extras re-priced for usage q.usage (e.g. half or 1.5x) and, if asked, first-year waits.
+const NO_EXTRAS_P = { k: 'E', n: 'No extras', e: { svc: {}, lim: [] } };
+function repricedTotal(r, q, firstYear) {
   const delta = (products, ex, usage) => {
-    const ep = products.find((p) => p.k === 'E' || p.k === 'C');
-    if (!ep || !ex) return 0;
-    const fy = extrasBenefits(ep, usage, { fees: q.fees, preferred: q.preferred, firstYear: true, served: q.served });
+    if (!ex) return 0;
+    const ep = products.find((p) => p.k === 'E' || p.k === 'C') || NO_EXTRAS_P;
+    const fy = extrasBenefits(ep, usage, { fees: q.fees, preferred: q.preferred, firstYear, served: q.served });
     return fy.outOfPocket - ex.outOfPocket;
   };
   if (r.split) {
@@ -6651,8 +6677,29 @@ function pickRecommended(list) {
   // you asked for the bare minimum for tax, or (extras only) entered no services: the cheapest is the answer
   if (S.want !== 'E' && !(S.hosp.cats || []).length && Object.values(S.hospUse || {}).some((u) => u.mls)) return { r: best, pts: 0 };
   if (S.want === 'E' && !(query(S.preferred).usage || []).length) return { r: best, pts: 0 };
+  const score = (r) => valueScore(r, best);
+  // with hospital cover held now, it must keep all of it unless you've said you don't need to
+  const guard = S.want !== 'E' && S.keepAns !== 'no' && currentHospitals().length > 0;
+  const ok = (r) => !guard || !coverDrops(r).length;
+  let pick = ok(best) ? { r: best, pts: score(best) } : null;
+  // far enough down to get past near-identical options (separate policies come in many combinations)
+  for (const [k, r] of list.slice(1, 400).entries()) {
+    if (r.total - best.total > budget) break;
+    if (!ok(r)) continue;
+    // far down the list it must at least hold up when usage changes (worst rank in the top 20)
+    if (k + 2 > 30 && worstRank(r) > 20) continue;
+    if (nearCopy(r, best)) continue;
+    const pts = score(r);
+    if (!pick || pts > pick.pts + 0.75) pick = { r, pts };
+  }
+  return pick;
+}
+// Value score against the cheapest (best): price (-1 a point per $150), how it holds up when usage changes,
+// hospital cover gained or lost, excess waivers, kinds of extras, ambulance, year-1 cost, estimated benefits,
+// and the odds-weighted "bad year" scenarios. Higher is better value.
+function valueScore(r, best) {
   const baseX = extrasCovered(best);
-  const score = (r) => {
+  {
     let pts = -(r.total - best.total) / 150;
     const w = worstRank(r);
     pts += w <= 5 ? 6 : w <= 10 ? 4 : w <= 20 ? 2 : 0;
@@ -6682,22 +6729,7 @@ function pickRecommended(list) {
       if (a != null && z != null) pts += (sc.odds * (z - a)) / 150;
     }
     return pts;
-  };
-  // with hospital cover held now, it must keep all of it unless you've said you don't need to
-  const guard = S.want !== 'E' && S.keepAns !== 'no' && currentHospitals().length > 0;
-  const ok = (r) => !guard || !coverDrops(r).length;
-  let pick = ok(best) ? { r: best, pts: score(best) } : null;
-  // far enough down to get past near-identical options (separate policies come in many combinations)
-  for (const [k, r] of list.slice(1, 400).entries()) {
-    if (r.total - best.total > budget) break;
-    if (!ok(r)) continue;
-    // far down the list it must at least hold up when usage changes (worst rank in the top 20)
-    if (k + 2 > 30 && worstRank(r) > 20) continue;
-    if (nearCopy(r, best)) continue;
-    const pts = score(r);
-    if (!pick || pts > pick.pts + 0.75) pick = { r, pts };
   }
-  return pick;
 }
 // Why an alternative card is shown: what's actually different from Option #1, and what it costs over it.
 function altWhy(r) {
@@ -6978,11 +7010,11 @@ function factRows(r, other, vsSelf) {
   }
   if (rankY1) rows.push(['first', 'From year 2', yr2(r) != null ? `${fmt(yr2(r))} a year` : '–']);
   else if (whatIf?.first) rows.push(['first', 'Waiting periods', f != null && f > r.total + 0.5 ? `<span class="cost">+${fmt(f - r.total)} in year 1</span> <span class="hint">(${fmt(f)} total)</span>` : 'No effect on your services']);
-  if (lo && hi) rows.push(['whatif', 'If you use less / more', Math.max(lo.rank, hi.rank) <= 10 ? 'Stays in the top 10' : `Ranks #${lo.rank} / #${hi.rank}`]);
+  if (lo && hi) rows.push(['whatif', 'If your usage changes', Math.max(lo.rank, hi.rank) <= 10 ? 'Stays in the top 10' : `Use half: #${lo.rank} · 50% more: #${hi.rank}`]);
   if (vsSelf != null) rows.push(['self', 'vs paying for services yourself', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${vsSelf >= 0 ? '' : '+'}${fmt(Math.abs(vsSelf))} ${vsSelf >= 0 ? 'less' : 'more'}</span>`]);
   return rows;
 }
-const FACT_LABEL = { pref: 'At preferred providers', xval: 'Extras', first: 'Waiting periods', whatif: 'If you use less / more', self: 'vs paying for services yourself' };
+const FACT_LABEL = { pref: 'At preferred providers', xval: 'Extras', first: 'Waiting periods', whatif: 'If your usage changes', self: 'vs paying for services yourself' };
 // what a blank row means for a card that doesn't have it
 const FACT_BLANK = { pref: 'No difference', first: 'No effect on your services' };
 function cardFacts(r, other, vsSelf) {
