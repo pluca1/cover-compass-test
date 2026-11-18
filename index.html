@@ -355,6 +355,7 @@ table.sbs td .pline .pv > details, table.sbs td .pline .pv > details > summary {
 .fact { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
 .fact dt { color: var(--muted); }
 .fact dt { flex: 1 1 auto; min-width: 0; }
+.fact { align-items: flex-start; }
 .fact .wsub { display: block; font-weight: 400; font-size: 12px; margin-top: 2px; }
 .fact dt .info { margin-left: 4px; vertical-align: 1px; }
 .fact dd { margin: 0; font-weight: 700; text-align: right; flex: 0 1 auto; max-width: 62%; }
@@ -1254,7 +1255,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .opttab { background: #1d5c4d; color: #fff; } }
 :root[data-theme="dark"] .opttab { background: #1d5c4d; color: #fff; }
 .gsame { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 10px 0 4px; }
-@container card (max-width: 330px) { .fact { flex-direction: column; gap: 2px; } .fact dd { max-width: none; text-align: left; } }
+@container card (max-width: 330px) { .fact { flex-direction: column; justify-content: flex-start; gap: 2px; } .fact dt { flex: none; } .fact dd { max-width: none; text-align: left; } }
 </style>
 
 <div class="wrap">
@@ -4682,7 +4683,7 @@ function alignCards() {
   const blocks = ['.cardtop .badges', '.cardtop', '.cardwhy', '.head .fund', '.head h3', '.head', '.price', '.pills', '.cardwarn', '.cardinfo', '.coverdiff', '.coverdiff .lose', '.cardmid'];
   for (const c of cards) {
     for (const sel of blocks) { const el = c.querySelector(sel); if (el) el.style.minHeight = ''; }
-    c.querySelectorAll('table.bd > tbody > tr, table.bd > tr, li.s, details.more > summary, ul.notes > li, .prow, .sblocks, .sblocks > .sblock, .sb-name, .sb-who, .whyline, .fact, .savebadge').forEach((e) => { e.style.height = ''; e.style.minHeight = ''; });
+    c.querySelectorAll('table.bd > tbody > tr, table.bd > tr, li.s, details.more > summary, ul.notes > li, .prow, .sblocks, .sblocks > .sblock, .sb-name, .sb-who, .whyline, .fact, .fact > dt, .savebadge, .savebadge > span').forEach((e) => { e.style.height = ''; e.style.minHeight = ''; });
   }
   if (cards.length < 2 || cards[0].offsetTop !== cards[1].offsetTop) return; // stacked on narrow screens
   const same = (els, prop = 'minHeight') => {
@@ -4691,6 +4692,10 @@ function alignCards() {
     const max = Math.max(...els.map((e) => e.getBoundingClientRect().height));
     for (const e of els) e.style[prop] = `${max}px`;
   };
+  // each line in the savings box level across cards (the sub-line can wrap differently), then the box itself
+  same(cards.map((c) => c.querySelector('.savebadge > span:not(.yr1):not(.yr2)')));
+  same(cards.map((c) => c.querySelector('.savebadge > .yr1')));
+  same(cards.map((c) => c.querySelector('.savebadge > .yr2')));
   same(cards.map((c) => c.querySelector('.savebadge')));
   same(cards.map((c) => c.querySelector('.sblocks > .sblock:first-child .sb-who')));
   same(cards.map((c) => c.querySelector('.sblocks > .sblock:first-child .sb-name')));
@@ -4701,7 +4706,12 @@ function alignCards() {
   // a one-policy box keeps its natural height (the row height is held by .sblocks), so no blank band inside it
   // why-it-stands-out and the detail rows, each level across cards
   same(cards.map((c) => c.querySelector('.whyline')));
-  for (const k of ['pref', 'xval', 'big', 'first', 'self']) same(cards.map((c) => c.querySelector(`.fact[data-k="${k}"]`)));
+  for (const k of ['pref', 'xval', 'big', 'first', 'self']) {
+    const fs = cards.map((c) => c.querySelector(`.fact[data-k="${k}"]`));
+    // label stacked above its value (narrow cards): level the labels so the values start on one line
+    if (fs.some((f) => f && getComputedStyle(f).flexDirection === 'column')) same(fs.map((f) => f?.querySelector(':scope > dt')));
+    same(fs);
+  }
   // fund line and policy name first, so "One family policy…" sits on the same line on every card
   for (const sel of blocks.slice(0, 6)) same(cards.map((c) => c.querySelector(sel)));
   // services in open breakdowns: same service on the same line in every card
