@@ -3519,6 +3519,8 @@ async function randomScenario(id) {
   const band = RND.weighted(P.income.map((w, i) => [i, w]));
   S.income = incomeBands()[band][1];
   S.incomeTyped = false;
+  // above the surcharge threshold, few households go without hospital cover: mostly add it
+  if (S.want === 'E' && band > 0 && RND.chance(0.8)) S.want = 'HE';
   if (RND.chance(0.2)) { S.income = Math.round((S.income * (0.85 + Math.random() * 0.3)) / 500) * 500; S.incomeTyped = true; } // an exact figure typed in
   const adults = couple ? [0, 1] : [0];
   const ks = kidStart();
@@ -3613,7 +3615,7 @@ async function randomScenario(id) {
   const incTxt = S.incomeTyped ? `${fmt(S.income)} income (typed)` : `income ${bands[rebateTier(S.income, couple ? 'F' : 'S', kidIdx.length)]?.[0] || fmt(S.income)}`;
   const hTxt = S.want === 'E' ? '' : `Hospital: at least ${TIER_LABEL[base] || base}, ${S.hosp.maxExcess ? `excess up to ${fmt(S.hosp.maxExcess)}` : 'no excess'}${Object.keys(hpNames).length ? `; needs ${Object.entries(hpNames).map(([i, n]) => `${who(Number(i))}: ${n.join(', ')}`).join('; ')}` : ''}${Object.entries(S.hospUse).filter(([, u]) => u.stays).map(([i, u]) => `; ${who(Number(i))} expects a ${u.nights}-night stay`).join('')}${S.hosp.noDayExcess ? '; no same-day excess' : ''}${S.hosp.noKidsExcess ? '; no excess for children' : ''}${S.hosp.allowRestricted ? '; accepts restricted' : ''}.`;
   const xTxt = S.want === 'H' ? '' : `Extras: ${Object.entries(xNames).map(([i, n]) => `${who(Number(i))} ${n}`).join(', ')}${S.preferred ? ', uses preferred providers' : ''}.`;
-  S.randomNote = `Random "${label}": ${S.stateCode}, ${ppl}, ${incTxt}, wants ${wantTxt}. Now: ${nowPartner ? `you ${nowYou}; partner ${nowPartner}` : nowYou}${S.keep.some(Boolean) ? ' (keep at least this cover)' : ''}.${lhcTxt.length ? ` Loading: ${lhcTxt.join(', ')}.` : ''} ${hTxt} ${xTxt}${S.amb.need ? ` Wants ambulance cover${S.amb.trips ? ' (1 trip expected)' : ''}.` : ''}${!S.mixFunds ? ' One fund only.' : ''}${couple && !S.split ? ' No separate policies.' : ''}`.replace(/\s+/g, ' ').trim();
+  S.randomNote = `Random "${label}": ${S.stateCode}, ${ppl}, ${incTxt}, wants ${wantTxt}. Now: ${nowPartner ? `you ${nowYou}; partner ${nowPartner}` : nowYou}${S.keep.some(Boolean) ? ' (keep at least this cover)' : ''}.${lhcTxt.length ? ` Loading: ${lhcTxt.join(', ')}.` : ''} ${hTxt} ${xTxt}${S.amb.need ? ` Wants ambulance cover${S.amb.trips ? ' (1 trip expected)' : ''}.` : ''}${!S.mixFunds ? ' One fund only.' : ''}${couple && !S.split && S.want !== 'E' ? ' No separate policies.' : ''}${S.want === 'E' && band > 0 ? ' Pays the Medicare levy surcharge (no hospital cover).' : ''}`.replace(/\s+/g, ' ').trim();
   const { person, hperson, ...rest } = S;
   location.hash = `s-${await pack(rest)}`;
   location.reload();
@@ -3710,7 +3712,7 @@ function nameHtml(r) {
 const keyOf = (r) => r.products.map((p) => p.id).join('+');
 
 let whatIf = null; // { lo, hi }: key -> { total, rank } at half and 1.5x usage
-// Ranked on the first year: when waiting periods make year 1 cost a lot more (braces or major dental starting soon),
+// Ranked on the first year: when waiting periods make Year 1 cost a lot more (braces or major dental starting soon),
 // the list, the savings and the cards use year-1 totals, with the from-year-2 figures beside them.
 let rankY1 = false, rankY1Offered = false;
 const Y1_TRIGGER = 500;
@@ -3771,30 +3773,31 @@ async function compute() {
   };
   let list = dedupe(S.preferred ? net : any);
   whatIf = null;
-  rankY1 = false; rankY1Offered = false;
+  rankY1 = false; rankY1Offered = false; y2Top = null;
   if (S.want !== 'H' && list.length) {
     // first year after switching: extras used during waiting periods pay nothing (waits served on current cover carry over)
     const fyQ = query(S.preferred); fyQ.firstYear = true;
     const fyList = rankAll(fyQ);
     const first = new Map(fyList.map((r) => [keyOf(r), r.total]));
-    // the first-year ranking only pairs the policies that are cheapest in year 1, so options near the top of the
+    // the first-year ranking only pairs the policies that are cheapest in Year 1, so options near the top of the
     // normal ranking can be missing from it: work theirs out directly
     for (const r of list.slice(0, 120)) if (!first.has(keyOf(r))) first.set(keyOf(r), firstYearTotal(r, fyQ));
     const ongoing = new Map((S.preferred ? net : any).map((r) => [keyOf(r), r.total]));
-    // the cheapest option on a normal year would cost a lot more in its first year: rank on year 1 (unless asked not to)
+    // the cheapest option on a normal year would cost a lot more in its first year: rank on Year 1 (unless asked not to)
     const heavy = (first.get(keyOf(list[0])) ?? list[0].total) - list[0].total >= Y1_TRIGGER;
     rankY1Offered = heavy || S.rankOn === 'y1';
-    // with braces, a crown or hearing aids entered, every policy that covers them makes you wait in year 1 anyway:
-    // ranking on year 1 would just pick the cheapest premiums (even 2-year waits), so rank on the cost once it pays
+    // with braces, a crown or hearing aids entered, every policy that covers them makes you wait in Year 1 anyway:
+    // ranking on Year 1 would just pick the cheapest premiums (even 2-year waits), so rank on the cost once it pays
     rankY1 = S.rankOn === 'y1' || (S.rankOn !== 'ongoing' && heavy && !must.length);
     if (rankY1) {
       const fq = (pref) => { const q = query(pref); q.firstYear = true; return q; };
       const other = rankAll(fq(!S.preferred));
       anyMap = new Map((S.preferred ? other : fyList).map((r) => [keyOf(r), r]));
       netMap = new Map((S.preferred ? fyList : other).map((r) => [keyOf(r), r]));
+      y2Top = list[0]?.total ?? null; // the cheapest from Year 2, for the headline
       list = dedupe(fyList);
     }
-    // ranked on year 1: options near the top that the normal ranking didn't pair need their from-year-2 figure too
+    // ranked on Year 1: options near the top that the normal ranking didn't pair need their from-year-2 figure too
     if (rankY1) { const nq = query(S.preferred); for (const r of list.slice(0, 120)) if (!ongoing.has(keyOf(r))) ongoing.set(keyOf(r), repricedTotal(r, nq, false)); }
     // What if usage is lighter or heavier? Re-rank (on the same basis) and see where the top options land.
     const scaled = (f, round) => { const q = query(S.preferred); q.firstYear = rankY1; q.usage = q.usage.map((u) => ({ ...u, count: round(u.count * f) })).filter((u) => u.count > 0); return q; };
@@ -4124,7 +4127,12 @@ function render(list, anyMap, netMap, data, current) {
     const save = np0 ? np0.head : c.total - list[0].total;
     const baseNow = c.total;
     parts.push(`<section class="panel nowbox">
-      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in year 1' : 'a year'} ${saveInfo(c, list[0], np0)}</span>${rankY1 && !np0 && yr2(list[0]) != null && Math.abs(yr2(list[0]) - list[0].total) >= 1 ? `<span class="sm bsnote">From year 2: ${c.total - yr2(list[0]) >= 1 ? `save ${fmt(c.total - yr2(list[0]))} a year` : `${fmt(yr2(list[0]) - c.total)} a year more than now`}.</span>` : ''}${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">From year 2. ${yr1Vs(list[0]).replace(' (waiting periods)', '')}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 ? `<div class="bigsave same costs"><div>In year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
+      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to <span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in Year 1' : !np0 && yr1(list[0]) ? 'a year from Year 2' : 'a year'} ${saveInfo(c, list[0], np0)}</span>${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${rankY1 && !np0 ? (() => {
+        const own = yr2(list[0]) ?? list[0].total, out = [];
+        if (Math.abs(own - list[0].total) >= 1) out.push(`From Year 2: this option ${c.total - own >= 1 ? `saves ${fmt(c.total - own)} a year` : `costs ${fmt(own - c.total)} a year more than ${c.products.length ? 'now' : 'having no cover'}`}.`);
+        if (y2Top != null && own - y2Top >= 1) out.push(`From Year 2, a different option is cheapest: ${c.total - y2Top >= 1 ? `it saves ${fmt(c.total - y2Top)} a year` : `it costs ${fmt(y2Top - c.total)} a year more`}, but costs more in Year 1. Choose “From Year 2” below to see it.`);
+        return out.length ? `<span class="sm bsnote">${out.join(' ')}</span>` : '';
+      })() : ''}${!np0 && yr1(list[0]) ? `<span class="sm bsnote yr1">${(() => { const d = c.total - yr1(list[0]); return d >= 1 ? `Year 1: Saves ${fmt(d)}` : `Year 1: Costs ${fmt(-d)} more than ${c.products.length ? 'now' : 'having no cover'}`; })()}, as services you use during waiting periods pay nothing.</span>` : ''}</div>${saveMeter(save, baseNow, !np0 && yr1(list[0]) != null && curNow.total - yr1(list[0]) < 1)}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 ? `<div class="bigsave same costs"><div>In Year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From Year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
       <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing' : 'with no'}</span> <span class="nowfig"><span class="nowlbl">cover</span> <b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</span></div></div>
       <p class="nowsave">${!c.products.length || np0 || curMissNow.length || c.products.some((p) => p.closed || p.corp || p.restricted) ? '' : (pos <= 1 ? 'Nothing costs less for what you use.' : `${(pos - 1).toLocaleString('en-AU')} of ${list.length.toLocaleString('en-AU')} ${S.keep?.some(Boolean) || keepPending() ? 'options with cover at least as good as yours' : 'options'} cost less for what you use.`)}${likeForLike(c, list)}</p>
     </section>`);
@@ -4168,7 +4176,7 @@ function render(list, anyMap, netMap, data, current) {
   const roleWords = { cheap: 'the cheapest', rec: 'our best-value pick', up: 'an upgrade that still costs less than you pay now', alt1: 'the runner-up (the cheapest genuinely different option)', alt2: 'the 2nd runner-up' };
   const roles = top.map((r) => roleWords[cardRole.get(r)]).filter(Boolean);
   const rolesTxt = roles.length > 1 ? `${roles.slice(0, -1).join(', ')} and ${roles[roles.length - 1]}` : roles[0] || '';
-  parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p class="toproles">${rolesTxt ? `${cap1(rolesTxt)}.` : ''}</p>${rankY1Offered ? `<div class="rankon"><span>${rankY1 ? `<b>Ranked on your first year:</b> waiting periods mean some of the services you entered won’t be paid by a new policy this year.${(() => { const no = S.want !== 'H' ? bigItems().filter((id) => bigStatus(list[0], id)?.none) : []; return no.length ? ` So the cheapest options this year don’t cover ${esc(no.map(bigName).join(' or ').toLowerCase())} at all. Choose <b>From year 2</b> to rank the policies that pay for ${no.length === 1 ? 'it' : 'them'} once the wait is served.` : ''; })()}` : `<b>Ranked from year 2:</b> as if waiting periods were already served.${mustShown.length ? ` ${mustShown.every((id) => servedCategories().includes(CATALOGUE.find((c) => c.id === id)?.cat)) ? `Your current cover already pays for ${esc(mustShown.map(bigName).join(' and ').toLowerCase())}: a new policy pays that much straight away, and only the part above it waits.` : `No new policy pays for ${esc(mustShown.map(bigName).join(' or ').toLowerCase())} until its waiting period is served, so year 1 costs more than later years whichever you choose: each card shows how much.`}` : ''}`}</span><span class="seg" role="group" aria-label="Rank on"><button type="button" data-rankon="y1" aria-pressed="${rankY1}">Year 1</button><button type="button" data-rankon="ongoing" aria-pressed="${!rankY1}">From year 2</button></span></div>` : ''}<p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}${mustShown.length && list.some((r) => mustShown.every((id) => (r.extras?.lines || []).some((x) => x.id === id && x.covered))) ? ` that cover ${esc(mustShown.map(bigName).join(' and ').toLowerCase())}` : ''}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? (noCoverNow ? ' Savings are against having no cover.' : ' Savings are against your existing cover.') : ''}</p></div>`);
+  parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p class="toproles">${rolesTxt ? `${cap1(rolesTxt)}.` : ''}</p>${rankY1Offered ? `<div class="rankon"><span>${rankY1 ? `<b>Ranked on your first year:</b> waiting periods mean some of the services you entered won’t be paid by a new policy this year.${(() => { const no = S.want !== 'H' ? bigItems().filter((id) => bigStatus(list[0], id)?.none) : []; return no.length ? ` So the cheapest options this year don’t cover ${esc(no.map(bigName).join(' or ').toLowerCase())} at all. Choose <b>From Year 2</b> to rank the policies that pay for ${no.length === 1 ? 'it' : 'them'} once the wait is served.` : ''; })()}` : `<b>Ranked from Year 2:</b> as if waiting periods were already served.${mustShown.length ? ` ${mustShown.every((id) => servedCategories().includes(CATALOGUE.find((c) => c.id === id)?.cat)) ? `Your current cover already pays for ${esc(mustShown.map(bigName).join(' and ').toLowerCase())}: a new policy pays that much straight away, and only the part above it waits.` : `No new policy pays for ${esc(mustShown.map(bigName).join(' or ').toLowerCase())} until its waiting period is served, so Year 1 costs more than later years whichever you choose: each card shows how much.`}` : ''}`}</span><span class="seg" role="group" aria-label="Rank on"><button type="button" data-rankon="y1" aria-pressed="${rankY1}">Year 1</button><button type="button" data-rankon="ongoing" aria-pressed="${!rankY1}">From Year 2</button></span></div>` : ''}<p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}${mustShown.length && list.some((r) => mustShown.every((id) => (r.extras?.lines || []).some((x) => x.id === id && x.covered))) ? ` that cover ${esc(mustShown.map(bigName).join(' and ').toLowerCase())}` : ''}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? (noCoverNow ? ' Savings are against having no cover.' : ' Savings are against your existing cover.') : ''}</p></div>`);
   const scens = SCENARIOS.filter((x) => (x.usage && S.want !== 'H') || (x.stay && S.want !== 'E'));
   const on = new Set(S.scen || []);
   parts.push(`<div class="scenbar" role="group" aria-label="What if"><span class="scenlbl">What if, on top of what you entered, you had…</span>${scens.map((x) => `<button type="button" class="scenbub" data-scen="${x.id}" aria-pressed="${on.has(x.id)}" title="${esc(x.desc)}">${esc(x.label)}</button>`).join('')}${on.size ? '<button type="button" class="textbtn" data-scen="">Clear</button>' : ''}</div>
@@ -4650,16 +4658,16 @@ function sideBySide(cur, top, q, list = top, picked = false) {
     const parts = rows.splice(costStart);
     const open = !!S.showCost;
     const btn = `<button type="button" class="plusbtn cattog" data-tog="costRows" aria-expanded="${open}" aria-label="Show how the total adds up">${open ? '−' : '+'}</button>`;
-    rows.push(row(`Total you pay ${rankY1 ? 'in year 1' : 'in a year'}<span class="sm">${q.want !== 'H' ? 'premiums + your share of services' : 'premiums'}${(q.hospital.admissions || 0) > 0 ? ' + excess' : ''}</span>`, (r) => `${fmt(r.total)} ${btn}`, 'num', 'key'));
+    rows.push(row(`Total you pay ${rankY1 ? 'in Year 1' : 'in a year'}<span class="sm">${q.want !== 'H' ? 'premiums + your share of services' : 'premiums'}${(q.hospital.admissions || 0) > 0 ? ' + excess' : ''}</span>`, (r) => `${fmt(r.total)} ${btn}`, 'num', 'key'));
     rows.push(`</tbody><tbody id="costRows" class="sub-rows"${open ? '' : ' hidden'}>`, ...parts, '</tbody><tbody>');
   }
   if (rankY1) {
-    rows.push(row('From year 2<span class="sm">once waiting periods are served</span>', (r) => (r === cur ? '–' : yr2(r) != null ? fmt(yr2(r)) : '–'), 'num'));
+    rows.push(row('From Year 2<span class="sm">once waiting periods are served</span>', (r) => (r === cur ? '–' : yr2(r) != null ? fmt(yr2(r)) : '–'), 'num'));
   } else if (whatIf?.first && top.some((r) => (whatIf.first.get(keyOf(r)) ?? r.total) > r.total + 0.5)) {
-    rows.push(row('Waiting periods<span class="sm">extra cost in year 1 on a new policy</span>', (r) => {
+    rows.push(row('Waiting periods<span class="sm">extra cost in Year 1 on a new policy</span>', (r) => {
       if (r === cur) return '–';
       const f = whatIf.first.get(keyOf(r));
-      return f == null || f <= r.total + 0.5 ? 'No effect on your services' : `<span class="cost">+${fmt(f - r.total)}</span><span class="sm">${fmt(f)} in year 1</span>`;
+      return f == null || f <= r.total + 0.5 ? 'No effect on your services' : `<span class="cost">+${fmt(f - r.total)}</span><span class="sm">${fmt(f)} in Year 1</span>`;
     }, 'num'));
   }
   if (cur) rows.push(row(noCoverNow ? 'Compared with having no cover' : 'Compared with your existing cover', (r) => {
@@ -5450,7 +5458,8 @@ function repricedTotal(r, q, firstYear) {
   }
   return r.total + delta(r.products, r.extras, q.usage || []);
 }
-// Ranked on year 1: what this option costs a year from year 2 (null otherwise)
+let y2Top = null; // ranked on Year 1: the total of the cheapest option from Year 2
+// Ranked on Year 1: what this option costs a year from Year 2 (null otherwise)
 function yr2(r) {
   if (!rankY1) return null;
   const v = whatIf?.ongoing?.get(keyOf(r));
@@ -5711,7 +5720,7 @@ function whyLine(r, top) {
     if (best) bits.push(`Best if you ${best.sc.short}: ${fmt(best.mineX)} out of pocket vs ${fmt(best.theirs)}+ on the others`);
   }
   if (whatIf?.first && others.some((x) => (whatIf.first.get(keyOf(x)) ?? x.total) > x.total + 0.5) && (whatIf.first.get(keyOf(r)) ?? r.total) <= r.total + 0.5) {
-    bits.push("Waiting periods don't cost you anything in year 1");
+    bits.push("Waiting periods don't cost you anything in Year 1");
   }
   if (!AMBULANCE.stateCovered.includes(S.stateCode) && r.ambulanceCovered && others.some((x) => !x.ambulanceCovered)) bits.push('Includes ambulance cover');
   const hp = hospParts(r)[0]?.p;
@@ -5905,11 +5914,11 @@ function saveBadge(r) {
   const d = curNow.total - r.total;
   if (Math.abs(d) < 1) return '<div class="savebadge same">Same cost as your existing cover</div>';
   const y2 = yr2(r);
-  const y2line = y2 != null && Math.abs(y2 - r.total) >= 1 ? `<span class="yr2">From year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : `${fmt(y2 - curNow.total)} a year more than ${noCoverNow ? 'having no cover' : 'now'}`}</span>` : '';
+  const y2line = y2 != null && Math.abs(y2 - r.total) >= 1 ? `<span class="yr2">From Year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : `${fmt(y2 - curNow.total)} a year more than ${noCoverNow ? 'having no cover' : 'now'}`}</span>` : '';
   if (rankY1) {
     const vs = noCoverNow ? 'having no cover' : 'your existing cover';
-    return d > 0 ? `<div class="savebadge good">Save <b>${fmt(d)}</b> in year 1 <span>vs ${vs}</span>${y2line}</div>`
-      : `<div class="savebadge bad"><b>${fmt(-d)}</b> more in year 1 <span>than ${vs} (waiting periods)</span>${y2line}</div>`;
+    return d > 0 ? `<div class="savebadge good">Save <b>${fmt(d)}</b> in Year 1 <span>vs ${vs}</span>${y2line}</div>`
+      : `<div class="savebadge bad"><b>${fmt(-d)}</b> more in Year 1 <span>than ${vs} (waiting periods)</span>${y2line}</div>`;
   }
   const y1 = yr1Vs(r);
   return d > 0
@@ -6031,7 +6040,7 @@ function saveMeter(save, now, later = false) {
   const into = lvl === 0 ? 0.5 : Math.max(0, Math.min(1, (pct - lo) / (hi - lo)));
   const pos = (lvl + 0.1 + 0.8 * into) * 25;
   return `<div class="meter" role="img" aria-label="${levels[lvl][0]}${save > 0.5 ? `: ${Math.round(pct)}% less than now` : ''}">
-    <div class="meter-label">${levels[lvl][0]}${later && lvl ? ' from year 2' : ''}${save > 0.5 && pct >= 1 ? `<span class="pct">${Math.round(pct)}% less</span>` : ''}</div>
+    <div class="meter-label">${levels[lvl][0]}${later && lvl ? ' from Year 2' : ''}${save > 0.5 && pct >= 1 ? `<span class="pct">${Math.round(pct)}% less</span>` : ''}</div>
     <div class="meter-bar">${levels.map((l, i) => `<span class="m${i}${i === lvl ? ' on' : ''}"></span>`).join('')}<i style="left:${pos.toFixed(1)}%"></i></div>
     <div class="meter-ticks"><span>No saving</span><span>Some</span><span>Great</span><span>Huge</span></div>
   </div>`;
@@ -6160,14 +6169,14 @@ function insightsPanel(list, cur, netMap) {
   if (rankY1) {
     const braces = (query(S.preferred).usage || []).some((u) => u.id === 'd881' && u.count);
     const y2b = yr2(best);
-    out.push({ icon: '&#9203;', h: 'Ranked on your first year', t: `Services you use during a waiting period pay nothing on a new policy (most extras wait 2 months; major dental and orthodontics usually 12), so this year's costs decide the order.${braces ? " Braces starting this year won't be paid by a new policy." : ''}${y2b != null ? ` From year 2, Option #1 costs ${fmt(y2b)} a year.` : ''} Switch to “From year 2” above to rank as if the waits were served.` });
+    out.push({ icon: '&#9203;', h: 'Ranked on your first year', t: `Services you use during a waiting period pay nothing on a new policy (most extras wait 2 months; major dental and orthodontics usually 12), so this year's costs decide the order.${braces ? " Braces starting this year won't be paid by a new policy." : ''}${y2b != null ? ` From Year 2, Option #1 costs ${fmt(y2b)} a year.` : ''} Switch to “From Year 2” above to rank as if the waits were served.` });
   } else {
     const f = yr1(best);
     if (f != null && f - best.total >= 200) {
       const braces = (query(S.preferred).usage || []).some((u) => u.id === 'd881' && u.count);
       const bServed = servedCategories().includes('Orthodontic');
       const cheaper1 = topNow.filter((x) => x !== best && (whatIf?.first?.get(keyOf(x)) ?? x.total) < f - 50).sort((a, b) => (whatIf.first.get(keyOf(a)) ?? a.total) - (whatIf.first.get(keyOf(b)) ?? b.total))[0];
-      out.push({ icon: '&#9203;', h: `Waiting periods: year 1 costs ${fmt(f - best.total)} more on Option #1`, t: `On a new policy, services used during a waiting period pay nothing (most extras wait 2 months; major dental and orthodontics usually 12).${cheaper1 ? ` In year 1, Option #${list.indexOf(cheaper1) + 1} costs ${fmt(f - (whatIf.first.get(keyOf(cheaper1)) ?? cheaper1.total))} less than Option #1.` : ''}${braces ? (bServed ? ' Your current cover already pays for braces: a new policy pays that much straight away, and only the part above it waits.' : " Braces starting this year won't be paid by a new policy: start cover 12 months before treatment, or keep cover that has already served the wait.") : ''}${cur && cur.products.length ? ' Waits already served on your current cover carry over for the same benefits.' : ''}` });
+      out.push({ icon: '&#9203;', h: `Waiting periods: Year 1 costs ${fmt(f - best.total)} more on Option #1`, t: `On a new policy, services used during a waiting period pay nothing (most extras wait 2 months; major dental and orthodontics usually 12).${cheaper1 ? ` In Year 1, Option #${list.indexOf(cheaper1) + 1} costs ${fmt(f - (whatIf.first.get(keyOf(cheaper1)) ?? cheaper1.total))} less than Option #1.` : ''}${braces ? (bServed ? ' Your current cover already pays for braces: a new policy pays that much straight away, and only the part above it waits.' : " Braces starting this year won't be paid by a new policy: start cover 12 months before treatment, or keep cover that has already served the wait.") : ''}${cur && cur.products.length ? ' Waits already served on your current cover carry over for the same benefits.' : ''}` });
     }
   }
   // more hospital cover for a little more
@@ -6340,7 +6349,7 @@ function prosCons(cur, top) {
         const needNames = [...needs].map((c) => HOSPITAL_CATS[c]).filter(Boolean);
         const key = w.filter((x) => needNames.some((n) => x.what.includes(n)));
         const longest = Math.max(...w.map((x) => Number((x.wait.match(/\d+/) || [0])[0])));
-        // waits on things you need always show; other waits only matter if they cost you something in year 1
+        // waits on things you need always show; other waits only matter if they cost you something in Year 1
         const fy = whatIf?.first?.get(keyOf(r));
         if (key.length) con.push(`New wait: ${key.map((x) => `${needNames.find((n) => x.what.includes(n))} ${x.wait.replace(/ \(.*\)$/, '')}`).join(', ')}`);
         else if (fy != null && fy > r.total + 50) con.push(`New waiting periods (up to ${longest} months)`);
@@ -7140,7 +7149,7 @@ function valueScore(r, best) {
       pts += Math.max(-3, Math.min(3, ([...rx].filter((g) => !baseX.has(g)).length - [...baseX].filter((g) => !rx.has(g)).length) * 0.5));
     }
     if (!AMBULANCE.stateCovered.includes(S.stateCode) && S.want !== 'E' && r.ambulanceCovered && !best.ambulanceCovered) pts += 1.5;
-    // year 1 counts for half: waiting periods on a new policy can make a cheap option dear in its first year
+    // Year 1 counts for half: waiting periods on a new policy can make a cheap option dear in its first year
     const fr = whatIf?.first?.get(keyOf(r)) ?? r.total, fb = whatIf?.first?.get(keyOf(best)) ?? best.total;
     pts -= (0.5 * ((fr - fb) - (r.total - best.total))) / 150;
     if (r.extras?.estimated) pts -= 1.5;
@@ -7173,7 +7182,7 @@ function bestWhy(r, best) {
     add(gx.length * 0.5, `Also covers ${listCats(gx.slice(0, 4).map((x) => x.toLowerCase()), 4)}${gx.length > 4 ? ' and more' : ''}`);
   }
   const fr = whatIf?.first?.get(keyOf(r)), fb = whatIf?.first?.get(keyOf(best));
-  if (!rankY1 && fr != null && fb != null) { const d = (fb - best.total) - (fr - r.total); if (d >= 100) add(d / 300, `${fmt(d)} less lost to waiting periods in year 1`); }
+  if (!rankY1 && fr != null && fb != null) { const d = (fb - best.total) - (fr - r.total); if (d >= 100) add(d / 300, `${fmt(d)} less lost to waiting periods in Year 1`); }
   const w = worstRank(r);
   if (w <= 10) add(w <= 5 ? 3 : 2, 'Holds up if you use more or less');
   let bad = 0;
@@ -7205,7 +7214,7 @@ function altWhy(r) {
   if (one.noExtras && !r.noExtras && !diffs.some((d) => d.startsWith('extras'))) diffs.push('adds an extras policy');
   if (!one.noExtras && r.noExtras) diffs.push('no extras policy');
   const d = r.total - one.total;
-  const cost = d >= 1 ? `${fmt(d)} ${rankY1 ? 'more in year 1' : 'a year more'}` : 'the same price';
+  const cost = d >= 1 ? `${fmt(d)} ${rankY1 ? 'more in Year 1' : 'a year more'}` : 'the same price';
   const head = adds.length ? `Over Option #1 it adds ${adds.slice(0, 3).join(', ')}, for ${cost}.` : `The next cheapest different option, for ${cost}.`;
   return `${head}${diffs.length ? ` ${cap1(diffs.join('; '))}.` : ''}`;
 }
@@ -7250,7 +7259,7 @@ function addsOver(r, x) {
     else if (xg.length) out.push(`extras that also cover ${listCats(xg.map((c) => c.toLowerCase()), 2)}`);
   }
   const fr = whatIf?.first?.get(keyOf(r)), fx = whatIf?.first?.get(keyOf(x));
-  if (!rankY1 && fr != null && fx != null && fx - fr >= 100) out.push(`${fmt(fx - fr)} less in year 1 (fewer waiting periods)`);
+  if (!rankY1 && fr != null && fx != null && fx - fr >= 100) out.push(`${fmt(fx - fr)} less in Year 1 (fewer waiting periods)`);
   return out;
 }
 // Two options that are practically the same choice: within $40 a year, the same hospital tiers,
@@ -7297,7 +7306,7 @@ function cardBadges(r) {
   if (curR && curR.products.length && r === list[0] && isUpgradeOn(r, curR)) b.push('<span class="badge upmini">Also an upgrade on your cover</span>');
   // badges and the saving at the top; the reasons go below the policy boxes
   // badges, then the year's total (breakdown behind the "i"), then the saving
-  const tot = `<div class="cardtot"><span class="nowlbl">Total cash you would outlay ${rankY1 ? 'in year 1' : waitList(r).length ? 'for the year once waiting periods are served' : 'for the year'}</span><span class="cardtot-n"><b class="nowbig">${fmt(r.total)}</b>${outlayInfo(r)}</span><span class="rankline">Option #${list.indexOf(r) + 1} · ${list.indexOf(r) ? `${ordinal(list.indexOf(r) + 1)} cheapest` : 'cheapest'} of ${list.length.toLocaleString('en-AU')}</span>${!curNow && yr1(r) ? `<span class="yr1">Year 1: ${fmt(yr1(r))} (waiting periods)</span>` : ''}${!curNow && yr2(r) != null && Math.abs(yr2(r) - r.total) >= 1 ? `<span class="yr2">From year 2: ${fmt(yr2(r))} a year</span>` : ''}</div>`;
+  const tot = `<div class="cardtot"><span class="nowlbl">Total cash you would outlay ${rankY1 ? 'in Year 1' : waitList(r).length ? 'for the year once waiting periods are served' : 'for the year'}</span><span class="cardtot-n"><b class="nowbig">${fmt(r.total)}</b>${outlayInfo(r)}</span><span class="rankline">Option #${list.indexOf(r) + 1} · ${list.indexOf(r) ? `${ordinal(list.indexOf(r) + 1)} cheapest` : 'cheapest'} of ${list.length.toLocaleString('en-AU')}</span>${!curNow && yr1(r) ? `<span class="yr1">Year 1: ${fmt(yr1(r))} (waiting periods)</span>` : ''}${!curNow && yr2(r) != null && Math.abs(yr2(r) - r.total) >= 1 ? `<span class="yr2">From Year 2: ${fmt(yr2(r))} a year</span>` : ''}</div>`;
   // with existing cover, the saving leads and the total sits under it, smaller
   const sb = saveBadge(r);
   const top = (x) => `<div class="cardtop${sb ? ' savefirst' : ''}"><div class="badges">${x.join('')}</div>${sb ? sb + tot : tot}</div>`;
@@ -7503,12 +7512,12 @@ function factRows(r, other, vsSelf) {
   {
     const ws = waitList(r), tip = waitTip(r, ws, f);
     const wl = ws.length ? ws.slice(0, 3).map((x) => `${esc(x.g)}: ${x.w}\u2011month wait${x.up ? ' on the higher benefit' : ''}`).join('<br>') + (ws.length > 3 ? `<br>+${ws.length - 3} more` : '') : '';
-    if (rankY1) rows.push(['first', `From year 2${tip}`, yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'No change' : `${fmt(yr2(r))} a year`]);
+    if (rankY1) rows.push(['first', `From Year 2${tip}`, yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'No change' : `${fmt(yr2(r))} a year`]);
     else if (whatIf?.first || S.want !== 'E') {
       // hospital waits too (pregnancy, new to hospital cover, new categories): they don't change this year's total but matter
       const hw = hospWaits(r);
       const lines = [wl, ...hw.map(esc)].filter(Boolean).join('<br>');
-      rows.push(['first', `Waiting periods${tip}`, lines ? `<span class="cost">${lines}</span>${f != null && f > r.total + 0.5 ? `<span class="hint wsub">${fmt(f - r.total)} more in year 1</span>` : ''}` : 'None for your services']);
+      rows.push(['first', `Waiting periods${tip}`, lines ? `<span class="cost">${lines}</span>${f != null && f > r.total + 0.5 ? `<span class="hint wsub">${fmt(f - r.total)} more in Year 1</span>` : ''}` : 'None for your services']);
     }
   }
   if (vsSelf != null) rows.push(['self', 'Compared with no cover', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${fmt(Math.abs(vsSelf))} a year ${vsSelf >= 0 ? 'cheaper' : 'dearer'}</span>`]);
@@ -7534,8 +7543,8 @@ function bigStatus(r, id) {
   const cat = ls.find((l) => l.cat)?.cat;
   const w = Math.max(0, ...r.products.map((p) => p.e?.svc?.[cat]?.w || 0));
   const served = (servedCategories() || []).includes(cat);
-  if (ls.every((l) => l.inWait)) return { cls: 'cost', t: `Covered after a ${w}-month wait: nothing back ${w > 12 || !rankY1 ? `until year ${Math.floor(w / 12) + 1}` : 'in year 1'}` };
-  if (ls.some((l) => l.upWait)) return { cls: 'cost', t: `${fmt(back)} back of ${fmt(fee)} in year 1: your current benefit, until the ${w}-month wait on the higher benefit is served` };
+  if (ls.every((l) => l.inWait)) return { cls: 'cost', t: `Covered after a ${w}-month wait: nothing back ${w > 12 || !rankY1 ? `until Year ${Math.floor(w / 12) + 1}` : 'in Year 1'}` };
+  if (ls.some((l) => l.upWait)) return { cls: 'cost', t: `${fmt(back)} back of ${fmt(fee)} in Year 1: your current benefit, until the ${w}-month wait on the higher benefit is served` };
   if (ls.some((l) => l.inWait)) return { cls: 'save', t: `${fmt(back)} back of ${fmt(fee)} (the rest falls in the ${w}-month wait)` };
   const more = served && w && ls.some((l) => l.old != null && l.benefit > l.old + 0.5);
   const was = ls.reduce((t, l) => t + (l.old ?? 0), 0);
@@ -7570,7 +7579,7 @@ function waitList(r) {
     // served on current cover: only a higher benefit than now has a wait (the current benefit is paid meanwhile)
     const up = served.has(l.cat);
     if (up && !l.upWait && !(l.old != null && l.benefit > l.old + 0.5)) continue;
-    // only waits that cost something in year 1: a service actually falls inside the wait (as the year-1 figures count it)
+    // only waits that cost something in Year 1: a service actually falls inside the wait (as the year-1 figures count it)
     const k = n[`${l.person}:${l.id}`];
     const bites = l.inWait || l.upWait || (l.benefit > 0 && (w >= 12 ? k : Math.round((k * w) / 12)) > 0);
     if (!bites) continue;
@@ -7587,8 +7596,8 @@ function waitTip(r, ws, f) {
   const has = !ws.length ? 'None of your services would fall in a waiting period on this policy.'
     : `${fresh ? `On this policy you'd serve new waiting periods for ${esc(fresh)}: services you use during a wait pay nothing.` : ''}${ups ? `${fresh ? ' ' : ''}It pays more than your current policy for ${esc(ups)}: the extra has its own wait, and until it's served you'd get what your current policy pays.` : ''}`;
   const body = rankY1
-    ? `${has} The total above is for year 1, so it already counts that.${yr2(r) != null && Math.abs(yr2(r) - r.total) >= 1 ? ` Once the waits are served it's ${fmt(yr2(r))} a year.` : ''}`
-    : `${has} The total above assumes the waits are already served (your cost from year 2).${f != null && f > r.total + 0.5 ? ` In year 1 you'd pay about ${fmt(f - r.total)} more: ${fmt(f)} in total.` : ''}`;
+    ? `${has} The total above is for Year 1, so it already counts that.${yr2(r) != null && Math.abs(yr2(r) - r.total) >= 1 ? ` Once the waits are served it's ${fmt(yr2(r))} a year.` : ''}`
+    : `${has} The total above assumes the waits are already served (your cost from Year 2).${f != null && f > r.total + 0.5 ? ` In Year 1 you'd pay about ${fmt(f - r.total)} more: ${fmt(f)} in total.` : ''}`;
   const hw = hospWaits(r);
   return ` <span class="info" tabindex="0" role="button" aria-label="About waiting periods">i<span class="tip" role="tooltip">${body}${hw.length ? ' Hospital waits don\'t change the totals, but the policy has to start that long before a planned stay or birth is covered.' : ''}${servedCategories()?.length ? `<small>Waits you’ve already served on your current cover carry over for the same benefits.${ups ? '' : ' Where a policy pays more, the extra has its own wait: until it’s served you’d get what your current policy pays.'}</small>` : ''}</span></span>`;
 }
@@ -7597,7 +7606,7 @@ function cardFacts(r, other, vsSelf) {
   let rows = factRows(r, other, vsSelf);
   if (factKeys) {
     const have = new Map(rows.map((x) => [x[0], x]));
-    rows = [...factKeys].map((k) => have.get(k) || [k, k === 'first' && rankY1 ? 'From year 2' : k === 'pref' ? PREF_LABEL() : k === 'big' && bigItems().length === 1 ? bigName(bigItems()[0]) : FACT_LABEL[k], FACT_BLANK[k] || '–']);
+    rows = [...factKeys].map((k) => have.get(k) || [k, k === 'first' && rankY1 ? 'From Year 2' : k === 'pref' ? PREF_LABEL() : k === 'big' && bigItems().length === 1 ? bigName(bigItems()[0]) : FACT_LABEL[k], FACT_BLANK[k] || '–']);
   }
   if (!rows.length) return '';
   return `<dl class="facts">${rows.map(([k, l, v]) => `<div class="fact" data-k="${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
