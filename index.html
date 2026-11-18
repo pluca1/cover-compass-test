@@ -6068,7 +6068,7 @@ const GUIDE_STEPS = [
   },
   {
     id: 'income', q: () => (S.cover === 'S' ? "What's your income?" : "What's your combined income?"),
-    hint: 'Income for surcharge purposes: taxable income plus super contributions and fringe benefits. It sets your rebate and the Medicare levy surcharge.',
+    hint: 'Income for Medicare levy surcharge purposes: taxable income plus super contributions and fringe benefits. It sets your rebate and the Medicare levy surcharge.',
     html: () => {
       renderIncomeBands();
       const opts = [...$('incomeBand').options].filter((o) => o.value);
