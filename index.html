@@ -6844,6 +6844,19 @@ function alignSbsHead() {
   for (const t of ths) { const sb = t.querySelector('.sblocks'); const one = sb?.querySelector('.sblock.one'); if (one && sb.style.minHeight) one.style.minHeight = sb.style.minHeight; }
 }
 
+// What an option's extras cover costs a year after rebate: the extras policies' premiums, plus the extras part of any
+// combined hospital + extras policy (estimated from its hospital share). null when the option has no extras cover.
+function extrasPremiumOf(r) {
+  if (r.split) {
+    const parts = r.split.map(extrasPremiumOf).filter(Boolean);
+    return parts.length ? { net: parts.reduce((t, x) => t + x.net, 0), est: parts.some((x) => x.est) } : null;
+  }
+  if (r.extrasPrem) return { net: r.extrasPrem.net, est: false };
+  const c = r.products.find((p) => p.k === 'C'), e = r.products.find((p) => p.k === 'E');
+  if (e && !c) return { net: r.premium.net, est: false };
+  if (c) return { net: c.prem * 12 * (1 - (c.hs ?? 0.75)) * (1 - (r.premium.rebatePct || 0) / 100), est: true };
+  return null;
+}
 // vs paying for services yourself (the surcharge applies either way); not shown when the card already compares with no cover
 function vsSelfOf(r) {
   return r.extras && S.want === 'E' && !(curNow && noCoverNow) ? r.servicesCost + (r.mls || 0) - r.total : null;
@@ -6855,10 +6868,13 @@ function factRows(r, other, vsSelf) {
   const f = whatIf?.first?.get(keyOf(r));
   const lo = whatIf?.lo?.get(keyOf(r)), hi = whatIf?.hi?.get(keyOf(r));
   if (other && Math.abs(other.total - r.total) > 1) rows.push(['pref', S.preferred ? 'With any provider' : 'At preferred providers', fmt(other.total)]);
-  const xPrem = r.extrasPrem?.net ?? (r.split && r.split.every((x) => x.extrasPrem || !x.products.some((p) => p.k === 'E' || p.k === 'C')) ? r.split.reduce((t, x) => t + (x.extrasPrem?.net || 0), 0) : null);
-  if (S.want === 'HE' && xPrem && r.extras) {
-    const d = r.extras.totalBenefit - xPrem;
-    rows.push(['xval', 'Extras', `<span class="${d >= 0 ? 'save' : 'cost'}">Get back ${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than you pay in extras premiums</span>`]);
+  if (S.want === 'HE' && r.extras) {
+    const xp = extrasPremiumOf(r);
+    if (!xp) rows.push(['xval', 'Extras', 'No extras policy: you pay for services yourself']);
+    else {
+      const d = r.extras.totalBenefit - xp.net;
+      rows.push(['xval', 'Extras', `<span class="${d >= 0 ? 'save' : 'cost'}">Get back ${xp.est ? 'about ' : ''}${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than you pay in extras premiums</span>`]);
+    }
   }
   if (whatIf?.first) rows.push(['first', 'First year (waiting periods)', f != null && f > r.total + 0.5 ? `<span class="cost">${fmt(f)} (+${fmt(f - r.total)})</span>` : 'No extra cost']);
   if (lo && hi) rows.push(['whatif', 'If you use less / more', Math.max(lo.rank, hi.rank) <= 10 ? 'Stays in the top 10' : `Ranks #${lo.rank} / #${hi.rank}`]);
