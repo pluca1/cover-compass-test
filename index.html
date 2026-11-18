@@ -4957,9 +4957,9 @@ function splitWarning(r) {
   const fam = (x) => x?.products.some((p) => p.cv === 'SP' || p.cv === 'F');
   if (fam(theirs)) return ''; // already single parent or family: a new baby is covered from birth
   if (fam(other)) {
-    return `<p class="hint">If you have another baby, add them to ${pw === 0 ? "your partner's" : 'your'} single parent policy (the one that covers your ${S.kids === 1 ? 'child' : 'children'}) soon after the birth; check the fund's deadline. The hospital costs of the birth are covered by ${pw === 0 ? 'your' : "your partner's"} policy, which has the pregnancy cover.</p>`;
+    return `<p class="hint">If you have another baby, add them to ${pw === 0 ? "your partner's" : 'your'} single parent policy (the one that covers your ${S.kids === 1 ? 'child' : 'children'}) after the birth: most funds allow a few months to a year and backdate it to the birth date; check your fund's deadline. The hospital costs of the birth are covered by ${pw === 0 ? 'your' : "your partner's"} policy, which has the pregnancy cover.</p>`;
   }
-  return `<p class="warnline">If you have ${hasKids() ? 'another' : 'a'} baby: ${pw === 0 ? 'your' : "your partner's"} single policy won't cover them. Before the birth, change it to single parent or family cover (check the fund's deadline, often months before the due date); the premium rises from then.</p>`;
+  return `<p class="warnline">If you have ${hasKids() ? 'another' : 'a'} baby: ${pw === 0 ? 'your' : "your partner's"} single policy doesn't cover them. Most funds let you change it to single parent or family cover within about 2 to 3 months of the birth, backdated to the birth date with no waiting periods, so a stay in special care or intensive care is covered; the higher premium applies from the birth. A few funds only cover a baby admitted straight after the birth if the change was made before it, so check with your fund.</p>`;
 }
 // Pregnancy cover asked for by this person, rather than only included because their tier always covers it.
 function plansPregnancy(i) {
@@ -6276,7 +6276,7 @@ function insightsPanel(list, cur, netMap) {
     const pi = [0, 1].find((i) => plansPregnancy(i));
     const hp = pi != null && S.want !== 'E' ? (hospParts(best).find((x) => x.i === Number(pi)) || hospParts(best)[0])?.p : null;
     if (hp && hp.h.cats.PregnancyBirth === 'Y' && !(cur && currentHospitals().some((x) => x.p.h.cats.PregnancyBirth === 'Y'))) {
-      out.splice(Math.min(1, out.length), 0, { icon: '&#9203;', h: `Pregnancy cover has a ${hp.h.waits?.PregnancyBirth ?? 12}-month wait`, t: `The policy needs to start before you conceive for the birth to be covered. Not in these totals: a private obstetrician's pregnancy management fee (often $3,000 to $6,000 out of pocket after Medicare), which hospital cover doesn't pay.${effCover() === 'S' ? " A single policy won't cover your baby: change to single parent cover before the birth (check the fund's deadline)." : ''}` });
+      out.splice(Math.min(1, out.length), 0, { icon: '&#9203;', h: `Pregnancy cover has a ${hp.h.waits?.PregnancyBirth ?? 12}-month wait`, t: `The policy needs to start before you conceive for the birth to be covered. Not in these totals: a private obstetrician's pregnancy management fee (often $3,000 to $6,000 out of pocket after Medicare), which hospital cover doesn't pay.${effCover() === 'S' ? " A single policy doesn't cover your baby: most funds let you change to single parent cover within about 2 to 3 months of the birth, backdated to the birth date (a few only cover a baby admitted straight after the birth if you change before it, so check with your fund)." : ''}` });
     }
   }
   // the surcharge: what going without hospital cover would cost
