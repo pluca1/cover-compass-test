@@ -352,7 +352,8 @@ table.sbs td .pline .pv > details, table.sbs td .pline .pv > details > summary {
 .facts { margin: 8px 0 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
 .fact { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
 .fact dt { color: var(--muted); }
-.fact dd { margin: 0; font-weight: 700; white-space: nowrap; }
+.fact dt { flex: 1 1 auto; min-width: 0; }
+.fact dd { margin: 0; font-weight: 700; text-align: right; flex: 0 1 auto; max-width: 62%; }
 .fact[data-k="xval"] dt { flex: 0 0 auto; }
 .fact[data-k="xval"] dd { white-space: normal; text-align: right; min-width: 0; }
 #results.simple .facts { display: none; }
@@ -365,6 +366,9 @@ table.rest { table-layout: fixed; }
 table.rest th:nth-child(1) { width: 78px; } table.rest th:nth-child(2) { width: 74px; } table.rest td:nth-child(2) { text-align: center; } table.rest th:nth-child(2) { text-align: center; }
 table.rest th:nth-child(3) { width: auto; }
 table.rest th.n, table.rest th:nth-child(n+4) { width: 96px; text-align: right; letter-spacing: .03em; }
+table.rest th.bwhy { width: 24%; text-align: left; } table.rest td.bwhy { font-size: 12.5px; line-height: 1.35; }
+table.rest .bw { display: block; padding-left: 12px; position: relative; } table.rest .bw::before { content: '✓'; position: absolute; left: 0; color: var(--good); font-weight: 700; }
+table.rest .bw + .bw { margin-top: 3px; }
 .coverdiff .lose details summary { cursor: pointer; font-weight: 700; font-size: 13px; color: var(--warn); }
 .covwho { display: inline-block; margin-top: 6px; padding: 4px 10px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--line); font-size: 12.5px; font-weight: 600; color: var(--fg); }
 .kidtag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: var(--gold-soft); color: var(--warn); font-size: 11px; letter-spacing: .03em; }
@@ -659,6 +663,7 @@ body.guiding .wrap > .grid, body.guiding #footer { visibility: hidden; }
   table.rest td { border: 0; padding: 2px 6px; }
   table.rest td.n { grid-column: 3; text-align: left; }
   table.rest td.n::before { content: attr(data-l) ': '; color: var(--muted); font-size: 12px; }
+  table.rest td.bwhy { grid-column: 3; }
 }
 
 /* existing cover: one total with an info breakdown */
@@ -683,8 +688,10 @@ body.guiding .wrap > .grid, body.guiding #footer { visibility: hidden; }
 .rankon .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; background: var(--surface); }
 .rankon .seg button { font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 12px; border: 0; background: none; color: var(--muted); cursor: pointer; }
 .rankon .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
-.nearnote { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
-.altwhy { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.nearnote { margin: 0; font-size: 12.5px; color: var(--fg); line-height: 1.4; background: var(--gold-soft); border-radius: 10px; padding: 8px 10px; }
+.recwhy + .nearnote { margin-top: 6px; }
+.altwhy { margin: 0; font-size: 12.5px; color: var(--fg); line-height: 1.45; border-radius: 10px; padding: 8px 10px; background: var(--silver-soft); }
+.altwhy.bronze { background: var(--bronze-soft); }
 .altwhy b { color: var(--fg); }
 .nearnote .rk { font: inherit; font-weight: 600; }
 .tophead .toproles { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
@@ -3830,7 +3837,7 @@ function render(list, anyMap, netMap, data, current) {
   const rowsShown = { amb2: top.some((r) => r.ambAddOn), excess: top.some((r) => r.hospital?.excess || r.hospital?.copay), amb: top.some((r) => r.ambulance || r.ambAddOn), mls: top.some((r) => r.mls), baby: top.some((r) => r.babyUpgrade) };
   factKeys = null;
   {
-    const order = ['pref', 'xval', 'first', 'whatif', 'self'];
+    const order = ['pref', 'xval', 'first', 'self'];
     const ks = new Set(top.flatMap((r) => factRows(r, (S.preferred ? anyMap : netMap).get(keyOf(r)), vsSelfOf(r)).map((x) => x[0])));
     factKeys = order.filter((k) => ks.has(k));
   }
@@ -3884,7 +3891,7 @@ function render(list, anyMap, netMap, data, current) {
         const r = lastList[n - 1];
         if (!r) return;
         S.pick = [...effPick().filter((k) => k !== keyOf(r)), keyOf(r)].slice(-3);
-        save(); render(...lastRender);
+        S.sbsOpen = true; save(); render(...lastRender);
         requestAnimationFrame(() => { const sb = document.querySelector('.sbs-panel'); if (sb) { sb.scrollIntoView({ behavior: 'smooth', block: 'start' }); sb.classList.add('flashrow'); } });
         return;
       }
@@ -3936,7 +3943,7 @@ function render(list, anyMap, netMap, data, current) {
         if (e.target.id === 'pickReset') { S.pick = null; save(); render(...lastRender); }
         const un = e.target.closest?.('[data-unpick]');
         if (un) { S.pick = effPick().filter((k) => k !== un.dataset.unpick); save(); render(...lastRender); }
-        if (e.target.id === 'pickGo') document.querySelector('.sbs-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (e.target.id === 'pickGo') { e.preventDefault(); const sp = document.querySelector('.sbs-panel'); const dd = sp?.querySelector('details'); if (dd) dd.open = true; sp?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
       });
     }
     const b = $('matchTier');
@@ -3947,7 +3954,9 @@ function render(list, anyMap, netMap, data, current) {
     for (const b of document.querySelectorAll('[data-rankon]')) b.addEventListener('click', () => { S.rankOn = b.dataset.rankon; save(); changed(); });
     for (const b of document.querySelectorAll('[data-restsort]')) b.addEventListener('click', () => { S.restSort = b.dataset.restsort; save(); render(...lastRender); });
     const sd = document.querySelector('.sbsdet');
-    if (sd) sd.addEventListener('toggle', () => { S.sbsShut = !sd.open; save(); });
+    if (sd) sd.addEventListener('toggle', () => { S.sbsOpen = sd.open; save(); });
+    const md = document.querySelector('.morerest');
+    if (md) md.addEventListener('toggle', () => { S.restOpen = md.open; save(); });
   });
 
   const others = list.filter((r) => !topNow.includes(r));
@@ -3956,9 +3965,9 @@ function render(list, anyMap, netMap, data, current) {
     ? others.slice(0, 120).map((r) => ({ r, v: valueScore(r, list[0]) })).sort((a, b) => b.v - a.v).slice(0, 17).map((x) => x.r)
     : others.slice(0, 17);
   if (rest.length) {
-    parts.push(`<section class="panel rest-panel"><details class="restdet" open><summary><h2 class="ph">More options</h2></summary><div class="restsort"><span class="seg" role="group" aria-label="Sort by"><button type="button" data-restsort="price" aria-pressed="${!byBest}">Cheapest first</button><button type="button" data-restsort="best" aria-pressed="${byBest}">Best value first</button></span><span class="hint">${byBest ? `The ${rest.length} best value after the cards above: price weighed against cover, extras, waiting periods and how each holds up if your usage changes. Option numbers are price ranks.` : `The next ${rest.length} by price (Options #${list.indexOf(rest[0]) + 1} to #${Math.max(...rest.map((r) => list.indexOf(r) + 1))}), apart from the cards above.`}</span></div><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Under each gap payment: what the fund pays of your services.</p><div class="table-wrap"><table class="rest">
-      <thead><tr><th>Compare</th><th>Option</th><th>Policy</th><th class="n" title="What you'd pay the fund in a year, after your rebate">Premiums</th><th class="n" title="What you'd still pay yourself in a year: gaps on your services after the fund's benefits, plus any excess">Gap payments</th><th class="n" title="Premiums plus what you'd still pay yourself for services (and any excess)">${rankY1 ? 'Year 1 total' : 'Total'}</th></tr></thead>
-      <tbody>${rest.map((r) => `<tr data-rank="${list.indexOf(r) + 1}"><td>${pickBox(r, true)}</td><td>${list.indexOf(r) + 1}</td><td>${restName(r)}</td>
+    parts.push(`<section class="panel rest-panel"><details class="restdet morerest"${S.restOpen ? ' open' : ''}><summary><h2 class="ph">More health fund options</h2></summary><div class="restsort"><span class="seg" role="group" aria-label="Sort by"><button type="button" data-restsort="price" aria-pressed="${!byBest}">Cheapest first</button><button type="button" data-restsort="best" aria-pressed="${byBest}">Best value first</button></span><span class="hint">${byBest ? `The ${rest.length} best value after the cards above: price weighed against cover, extras, waiting periods and how each holds up if your usage changes. Option numbers are price ranks.` : `The next ${rest.length} by price (Options #${list.indexOf(rest[0]) + 1} to #${Math.max(...rest.map((r) => list.indexOf(r) + 1))}), apart from the cards above.`}</span></div><p class="hint restnote"><b>Premiums</b> + <b>gap payments</b> (what you'd still pay yourself for your services after the fund's benefits, plus any excess) = <b>Total</b>. Under each gap payment: what the fund pays of your services.</p><div class="table-wrap"><table class="rest">
+      <thead><tr><th>Compare</th><th>Option</th><th>Policy</th>${byBest ? '<th class="bwhy">Why it\'s better value than Option #1</th>' : ''}<th class="n" title="What you'd pay the fund in a year, after your rebate">Premiums</th><th class="n" title="What you'd still pay yourself in a year: gaps on your services after the fund's benefits, plus any excess">Gap payments</th><th class="n" title="Premiums plus what you'd still pay yourself for services (and any excess)">${rankY1 ? 'Year 1 total' : 'Total'}</th></tr></thead>
+      <tbody>${rest.map((r) => `<tr data-rank="${list.indexOf(r) + 1}"><td>${pickBox(r, true)}</td><td>${list.indexOf(r) + 1}</td><td>${restName(r)}</td>${byBest ? `<td class="bwhy" data-l="Better value">${bestWhy(r, list[0]).map((t) => `<span class="bw">${esc(t)}</span>`).join('')}</td>` : ''}
         <td class="n" data-l="Premiums">${fmt(r.premium.net)}</td><td class="n" data-l="Gap payments">${fmt(Math.max(0, r.total - r.premium.net))}${r.extras?.totalFees ? `<span class="fundpays">fund pays ${fmt(r.extras.totalBenefit || 0)} of ${fmt(r.extras.totalFees)}</span>` : ''}</td><td class="n" data-l="Total"><b>${fmt(r.total)}</b></td></tr>`).join('')}</tbody></table></div></details></section>`);
   }
   $('results').innerHTML = parts.join('');
@@ -4015,7 +4024,6 @@ function card(r, i, anyMap, netMap, rowsShown = {}) {
     ${cardBadges(r).top}
     <div class="head"><div><div class="fund">${r.split ? 'Two separate policies' : r.mixed ? 'Two policies · 2 funds' : 'One policy'}</div>${r.split ? splitBlocks(r) : oneBlock(r)}</div></div>
     ${cardBadges(r).why}
-    ${r === lastList[0] && nearSkipped.length ? `<p class="nearnote">${nearNote()}</p>` : ''}
     <div class="price">
     <div class="whyline">${whyLine(r, topNow)}</div>
     ${cardFacts(r, other, vsSelf)}</div>
@@ -4413,7 +4421,7 @@ function sideBySide(cur, top, q, list = top, picked = false) {
   const pc = prosCons(cur, top);
   const glanceRow = `<tr class="pcrow"><td>At a glance<span class="sm">${cur ? (noCoverNow ? 'compared with having no cover' : 'compared with your existing cover') : `compared with Option #${topNowRank(top, top[0])}`}</span></td>${cols.map((c) => `<td class="${c.cls}">${c.r === cur ? curGlance(c.r) : pc.get(c.r) || ''}</td>`).join('')}</tr>`;
   const head = cols.map((c) => `<th class="${c.cls}"><div class="thtop"><span class="thk">${c.head}${c.r === cur ? '' : `<button type="button" class="unpick" data-unpick="${esc(keyOf(c.r))}" aria-label="Remove ${esc(c.head)} from the comparison" title="Remove from comparison">&times;</button>`}</span><b>${!c.r.products.length ? 'No cover now' : c.r.split ? 'Two separate policies' : c.r.mixed ? 'Two policies · 2 funds' : 'One policy'}</b></div>${!c.r.products.length ? `<div class="nocov">You pay for your services yourself${c.r.mls ? ', plus the Medicare levy surcharge' : ''}.</div>` : c.r.split ? splitBlocks(c.r) : oneBlock(c.r)}${c.r.products.some((p) => notOpenNote(p)) ? `<span class="hint">${esc(notOpenNote(c.r.products.find((p) => notOpenNote(p))).replace(/^./, (x) => x.toUpperCase()))}</span>` : ''}</th>`).join('');
-  return `<section class="panel sbs-panel${picked ? ' picked' : ''}"><details class="restdet sbsdet"${S.sbsShut ? '' : ' open'}><summary><h2 class="ph">${cur ? 'Compare to existing' : 'Compare options'}</h2></summary>
+  return `<section class="panel sbs-panel${picked ? ' picked' : ''}"><details class="restdet sbsdet"${S.sbsOpen ? ' open' : ''}><summary><h2 class="ph">${cur ? 'Compare to existing' : 'Compare options'}</h2></summary>
     <p class="pickline">${picked ? `Showing the ${top.length} option${top.length === 1 ? '' : 's'} you picked. <button type="button" class="linkbtn" id="pickReset">Back to the top 3</button>` : 'Showing the top 3. Untick one on its card to take it out, or tick any option in the list below to add it (up to 3).'}</p>
     <p class="hint" style="padding:4px 16px 0;margin:0">If you switch, waiting periods you've already served carry over for the same level of cover. You'd serve new waits only on benefits that are higher or new.</p>
     <p class="sbs-scroll${cols.length > 4 ? '' : ' mob'}">${cols.length > 4 ? 'Scroll sideways to see every option' : 'Swipe sideways to see each option'} &rarr;</p>
@@ -4545,7 +4553,7 @@ function alignCards() {
   for (const c of cards) { const sb = c.querySelector('.sblocks'); const one = sb?.querySelector('.sblock.one'); if (one && sb.style.minHeight) one.style.minHeight = sb.style.minHeight; }
   // why-it-stands-out and the detail rows, each level across cards
   same(cards.map((c) => c.querySelector('.whyline')));
-  for (const k of ['pref', 'xval', 'first', 'whatif', 'self']) same(cards.map((c) => c.querySelector(`.fact[data-k="${k}"]`)));
+  for (const k of ['pref', 'xval', 'first', 'self']) same(cards.map((c) => c.querySelector(`.fact[data-k="${k}"]`)));
   // fund line and policy name first, so "One family policy…" sits on the same line on every card
   for (const sel of blocks.slice(0, 6)) same(cards.map((c) => c.querySelector(sel)));
   // services in open breakdowns: same service on the same line in every card
@@ -5544,7 +5552,7 @@ function saveBadge(r) {
   }
   const y1 = yr1Vs(r);
   return d > 0
-    ? `<div class="savebadge good">Save <b>${fmt(d)}</b>/yr <span>${fmt(d / 12)} a month vs ${noCoverNow ? 'having no cover' : 'your existing cover'} · ${coverDrops(r).length ? 'with less cover than now' : !noCoverNow && maxExcessOf(r) > maxExcessOf(curNow) ? `with a higher excess (${fmt(maxExcessOf(r))} vs ${maxExcessOf(curNow) ? fmt(maxExcessOf(curNow)) : 'none'})` : 'based on YOUR usage'}</span>${y1 ? `<span class="yr1">${y1}</span>` : ''}</div>`
+    ? `<div class="savebadge good">Save <b>${fmt(d)}</b>/yr <span>${fmt(d / 12)} a month vs ${noCoverNow ? 'having no cover' : 'your existing cover'} · ${!noCoverNow && maxExcessOf(r) > maxExcessOf(curNow) ? `with a higher excess (${fmt(maxExcessOf(r))} vs ${maxExcessOf(curNow) ? fmt(maxExcessOf(curNow)) : 'none'})` : 'based on YOUR usage'}</span>${y1 ? `<span class="yr1">${y1}</span>` : ''}</div>`
     : curMissNow.length && !coverDrops(r).length
       ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr <span>adds ${esc(listCats(curMissNow.filter((c) => (catsY(r) || []).includes(c)), 99) || 'the cover you asked for')}</span></div>`
       : `<div class="savebadge bad"><b>${fmt(-d)}</b>/yr more <span>than ${noCoverNow ? 'having no cover' : 'your existing cover'}</span></div>`;
@@ -6735,6 +6743,36 @@ function valueScore(r, best) {
     return pts;
   }
 }
+// Best value list: the main reasons this option is better value than Option #1, in a few words each (most weight first).
+function bestWhy(r, best) {
+  const out = [];
+  const add = (w, t) => { if (w > 0) out.push({ w, t }); };
+  if (S.want !== 'E') {
+    const n = (m) => new Set(Object.entries(m).filter(([k]) => Number(k) < adultsCount()).flatMap(([, cs]) => cs)).size;
+    const g = n(moreCoverThan(r, best)) - n(moreCoverThan(best, r));
+    add(g * 0.8, `${g} more hospital categor${g === 1 ? 'y' : 'ies'}`);
+    const xr = maxExcessOf(r), xb = maxExcessOf(best);
+    if (xr < xb) add(1 + (xb - xr) / 500, xr ? `${fmt(xr)} excess, not ${fmt(xb)}` : `No excess (Option #1: ${fmt(xb)})`);
+    const wr = waiversOf(r), wb = waiversOf(best);
+    if (kidsCovered() && wr.has('Dependents') && !wb.has('Dependents')) add(1, 'No excess for children');
+    if (wr.has('DaySurgery') && !wb.has('DaySurgery')) add(1, 'No excess on day surgery');
+    if (!AMBULANCE.stateCovered.includes(S.stateCode) && r.ambulanceCovered && !best.ambulanceCovered) add(1.5, 'Includes ambulance');
+  }
+  if (S.want !== 'H') {
+    const bx = extrasCovered(best), gx = [...extrasCovered(r)].filter((x) => !bx.has(x));
+    add(gx.length * 0.5, `Also covers ${gx.slice(0, 2).join(' and ').toLowerCase()}${gx.length > 2 ? ` +${gx.length - 2}` : ''}`);
+  }
+  const fr = whatIf?.first?.get(keyOf(r)), fb = whatIf?.first?.get(keyOf(best));
+  if (!rankY1 && fr != null && fb != null) { const d = (fb - best.total) - (fr - r.total); if (d >= 100) add(d / 300, `${fmt(d)} less lost to waiting periods in year 1`); }
+  const w = worstRank(r);
+  if (w <= 10) add(w <= 5 ? 3 : 2, 'Holds up if you use more or less');
+  let bad = 0;
+  for (const sc of SCENARIOS) { if ((S.scen || []).includes(sc.id)) continue; const a = scenExtra(r, sc), z = scenExtra(best, sc); if (a != null && z != null) bad += sc.odds * (z - a); }
+  if (bad >= 75) add(bad / 150, 'Pays more if something big happens');
+  const d = r.total - best.total;
+  if (!out.length) return [d <= 50 ? 'Close to the cheapest price' : '–'];
+  return out.sort((a, b) => b.w - a.w).slice(0, 2).map((x) => x.t);
+}
 // Why an alternative card is shown: what's actually different from Option #1, and what it costs over it.
 function altWhy(r) {
   const list = lastList, one = list[0];
@@ -6823,9 +6861,11 @@ function cardBadges(r) {
   // no other badge: it's here as the cheapest genuinely different alternative (silver), or the next one (bronze)
   if (!b.length) {
     const role = cardRole.get(r);
-    const label = role === 'alt1' ? 'Cheapest alternative' : role === 'alt2' ? 'Next alternative' : `${ordinal(list.indexOf(r) + 1)} cheapest`;
+    // every option cheaper than this card is another card or a near-copy of one, so it's the k-th cheapest real choice
+    const k = topNow.filter((x) => list.indexOf(x) < list.indexOf(r)).length + 1;
+    const label = role === 'alt1' || role === 'alt2' ? `${ordinal(k)} cheapest choice` : `${ordinal(list.indexOf(r) + 1)} cheapest`;
     const reason = role === 'alt1' || role === 'alt2' ? altWhy(r) : '';
-    return { top: top([`<span class="badge rankb${role === 'alt1' ? ' silver' : role === 'alt2' ? ' bronze' : ''}">${label}</span>`]), why: `<div class="cardwhy">${reason ? `<p class="altwhy"><b>Why it's here:</b> ${reason}</p>` : ''}</div>` };
+    return { top: top([`<span class="badge rankb${role === 'alt1' ? ' silver' : role === 'alt2' ? ' bronze' : ''}">${label}</span>`]), why: `<div class="cardwhy">${reason ? `<p class="altwhy ${role === 'alt1' ? 'silver' : 'bronze'}"><b>Why it's here:</b> ${reason}</p>` : ''}</div>` };
   }
   let why = '';
   if (upPick && r === upPick.r && !(recPick && r === recPick.r)) {
@@ -6837,6 +6877,7 @@ function cardBadges(r) {
     if (!pros.length && r !== list[0]) pros.push('Best balance of price, cover and money back');
     if (pros.length) why = `<div class="recwhy"><b>${esc(head)}</b><ul>${pros.slice(0, 3).map((t) => `<li>${esc(t)}</li>`).join('')}</ul></div>`;
   }
+  if (r === list[0] && nearSkipped.length) why += `<p class="nearnote">${nearNote()}</p>`;
   return { top: top(b), why: `<div class="cardwhy">${why}</div>` };
 }
 
@@ -7002,8 +7043,7 @@ let factKeys = null; // every detail row any card shown has, so each card has th
 function factRows(r, other, vsSelf) {
   const rows = [];
   const f = whatIf?.first?.get(keyOf(r));
-  const lo = whatIf?.lo?.get(keyOf(r)), hi = whatIf?.hi?.get(keyOf(r));
-  if (other && Math.abs(other.total - r.total) > 1) rows.push(['pref', S.preferred ? 'With any provider' : 'At preferred providers', fmt(other.total)]);
+  if (other && Math.abs(other.total - r.total) > 1) { const d = other.total - r.total; rows.push(['pref', PREF_LABEL(), `<span class="${d < 0 ? 'save' : 'cost'}">${d < 0 ? 'Save' : 'Costs'} ${fmt(Math.abs(d))} ${d < 0 ? 'a year' : 'more a year'}</span>`]); }
   if (S.want === 'HE' && r.extras) {
     const xp = extrasPremiumOf(r);
     if (!xp) rows.push(['xval', 'Extras', 'No extras policy: you pay for services yourself']);
@@ -7014,18 +7054,19 @@ function factRows(r, other, vsSelf) {
   }
   if (rankY1) rows.push(['first', 'From year 2', yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'Same as year 1' : `${fmt(yr2(r))} a year`]);
   else if (whatIf?.first) rows.push(['first', 'Waiting periods', f != null && f > r.total + 0.5 ? `<span class="cost">+${fmt(f - r.total)} in year 1</span> <span class="hint">(${fmt(f)} total)</span>` : 'No effect on your services']);
-  if (lo && hi) rows.push(['whatif', 'If your usage changes', Math.max(lo.rank, hi.rank) <= 10 ? 'Stays in the top 10' : `Use half: #${lo.rank} · 50% more: #${hi.rank}`]);
   if (vsSelf != null) rows.push(['self', 'vs paying for services yourself', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${vsSelf >= 0 ? '' : '+'}${fmt(Math.abs(vsSelf))} ${vsSelf >= 0 ? 'less' : 'more'}</span>`]);
   return rows;
 }
-const FACT_LABEL = { pref: 'At preferred providers', xval: 'Extras', first: 'Waiting periods', whatif: 'If your usage changes', self: 'vs paying for services yourself' };
+// preferred providers: the fund's network dentists, physios and optometrists, which charge members less
+const PREF_LABEL = () => (S.preferred ? 'Using any provider instead' : "Using the fund's preferred providers");
+const FACT_LABEL = { xval: 'Extras', first: 'Waiting periods', self: 'vs paying for services yourself' };
 // what a blank row means for a card that doesn't have it
-const FACT_BLANK = { pref: 'No difference', first: 'No effect on your services' };
+const FACT_BLANK = { pref: 'No saving for this option', first: 'No effect on your services' };
 function cardFacts(r, other, vsSelf) {
   let rows = factRows(r, other, vsSelf);
   if (factKeys) {
     const have = new Map(rows.map((x) => [x[0], x]));
-    rows = [...factKeys].map((k) => have.get(k) || [k, k === 'first' && rankY1 ? 'From year 2' : FACT_LABEL[k], FACT_BLANK[k] || '–']);
+    rows = [...factKeys].map((k) => have.get(k) || [k, k === 'first' && rankY1 ? 'From year 2' : k === 'pref' ? PREF_LABEL() : FACT_LABEL[k], FACT_BLANK[k] || '–']);
   }
   if (!rows.length) return '';
   return `<dl class="facts">${rows.map(([k, l, v]) => `<div class="fact" data-k="${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
