@@ -6046,7 +6046,7 @@ function pickBox(r, bare = false) {
   const on = effPick().includes(k);
   return bare
     ? `<input type="checkbox" class="pickin" data-pick="${esc(k)}" aria-label="Add to comparison"${on ? ' checked' : ''}>`
-    : `<label class="pick"><input type="checkbox" data-pick="${esc(k)}"${on ? ' checked' : ''}> ${on ? 'In the comparison below' : 'Add to comparison'}${on ? ' <button type="button" class="linkbtn" id="pickGo">see it</button>' : ''}</label>`;
+    : `<label class="pick"><input type="checkbox" data-pick="${esc(k)}"${on ? ' checked' : ''}> ${on ? 'In the comparison below' : 'Add to comparison'}${on ? ' <button type="button" class="linkbtn" id="pickGo" aria-label="Go to the comparison">GO</button>' : ''}</label>`;
 }
 
 // The big funds (Medibank, ahm, Bupa, HCF, nib, HBF), not the brands they sell under other names
