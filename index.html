@@ -1482,7 +1482,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
           </div>
           <label class="toggle"><input type="checkbox" id="noDayExcess"><span class="hint"><b>No excess on same-day surgery</b> (in and out the same day, e.g. scopes, cataracts, minor procedures)</span></label>
           <label class="toggle" id="noKidsExcess-wrap"><input type="checkbox" id="noKidsExcess"><span class="hint"><b>No excess when a child goes to hospital</b></span></label>
-          <label class="toggle"><input type="checkbox" id="allowRestricted"><span class="hint">Accept "restricted" cover for these (shared-ward benefits only) <button type="button" class="qi" data-g="restricted" aria-label="What is restricted cover?">?</button></span></label>
+          <label class="toggle"><input type="checkbox" id="allowRestricted"><span class="hint">Accept "restricted" cover for psychiatric care, rehabilitation and palliative care (shared-ward benefits only) <button type="button" class="qi" data-g="restricted" aria-label="What is restricted cover?">?</button></span></label>
           <span class="hint" id="popt-hint">One shared policy has to suit you both: the lower excess, and restricted cover only if you both accept it.</span>
         </div>
       </div>
@@ -2407,6 +2407,9 @@ function headlineExcess(product) {
   return xs.PerAdmission || xs.PerPerson || xs.PerPolicy || xs.PerYear || 0;
 }
 
+// "Accept restricted cover" only ever stands in for these: the categories Basic, Bronze and Silver policies may
+// cover at public-hospital (shared-ward) rates. Anything else needed must be fully covered.
+const RESTRICTED_OK = ['HospitalPsychiatric', 'Rehabilitation', 'PalliativeCare'];
 function hospitalMatches(product, req) {
   const h = product.h;
   if (!h) return false;
@@ -2420,7 +2423,7 @@ function hospitalMatches(product, req) {
   for (const c of req.cats || []) {
     const v = h.cats[c];
     if (v === 'Y') continue;
-    if (v === 'R' && req.allowRestricted) continue;
+    if (v === 'R' && req.allowRestricted && RESTRICTED_OK.includes(c)) continue;
     return false;
   }
   return true;
@@ -6801,7 +6804,7 @@ const GUIDE_STEPS = [
         <div class="gfield"><span class="glbl">Highest excess</span><div class="gpills" data-xs="${i}">${[...$('maxExcess').options].map((o) => gPill(o.value, esc(o.textContent), String(popt(i, 'maxExcess')) === o.value)).join('')}</div></div>
         <div class="gtoggles">${t('noDayExcess', 'No excess on same-day surgery', 'In and out the same day: scopes, cataracts, minor procedures')}
         ${kidsCovered() && i === 0 ? t('noKidsExcess', 'No excess when a child goes to hospital') : ''}
-        ${t('allowRestricted', 'Accept "restricted" cover', 'Shared-ward benefits only: cheaper, but you may face big bills in a private hospital')}</div></div>`;
+        ${t('allowRestricted', 'Accept "restricted" cover for psychiatric care, rehab and palliative care', 'Shared-ward benefits only: cheaper, but you may face big bills in a private hospital')}</div></div>`;
     }).join('') + (gCouple() ? '<div class="gsame"><button type="button" class="gpill" data-samexs>Same for both</button><small class="gnote">Copies your excess and options to your partner.</small></div>' : ''),
     bind: (el) => {
       for (const box of el.querySelectorAll('[data-xs]')) box.addEventListener('click', (e) => { const b = e.target.closest('.gpill'); if (b) { setPopt(Number(box.dataset.xs), 'maxExcess', Number(b.dataset.v)); gPick(box, b); renderPopt(); changed(); } });
