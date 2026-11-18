@@ -4595,9 +4595,9 @@ function splitWarning(r) {
   const fam = (x) => x?.products.some((p) => p.cv === 'SP' || p.cv === 'F');
   if (fam(theirs)) return ''; // already single parent or family: a new baby is covered from birth
   if (fam(other)) {
-    return `<p class="hint">If you have a baby, add them to ${pw === 0 ? "your partner's" : 'your'} single parent policy (the one that covers your ${S.kids === 1 ? 'child' : 'children'}) soon after the birth; check the fund's deadline. The hospital costs of the birth are covered by ${pw === 0 ? 'your' : "your partner's"} policy, which has the pregnancy cover.</p>`;
+    return `<p class="hint">If you have another baby, add them to ${pw === 0 ? "your partner's" : 'your'} single parent policy (the one that covers your ${S.kids === 1 ? 'child' : 'children'}) soon after the birth; check the fund's deadline. The hospital costs of the birth are covered by ${pw === 0 ? 'your' : "your partner's"} policy, which has the pregnancy cover.</p>`;
   }
-  return `<p class="warnline">If you have a baby: ${pw === 0 ? 'your' : "your partner's"} single policy won't cover them. Before the birth, change it to single parent or family cover (check the fund's deadline, often months before the due date); the premium rises from then.</p>`;
+  return `<p class="warnline">If you have ${hasKids() ? 'another' : 'a'} baby: ${pw === 0 ? 'your' : "your partner's"} single policy won't cover them. Before the birth, change it to single parent or family cover (check the fund's deadline, often months before the due date); the premium rises from then.</p>`;
 }
 // Pregnancy cover asked for by this person, rather than only included because their tier always covers it.
 function plansPregnancy(i) {
@@ -4907,14 +4907,14 @@ function dropsNote(r) {
   if (!lose.length && !gain.length && !newLine) return '';
   const list = (xs) => `<ul${xs.length > 4 ? ' class="two"' : ''}>${xs.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
   const gainHtml = gain.length
-    ? `<div class="gain">${gain.length > 6
+    ? `<div class="gain">${gain.length > 8
       ? `<details data-row="card-gain"><summary>More cover${gw ? ` for ${gw}` : ''} than you have now (${gain.length})</summary>${list(gain)}</details>`
       : `<div class="cd-h">More cover${gw ? ` for ${gw}` : ''} than you have now</div>${list(gain)}`}</div>` : '';
   const d = dropsBy(r);
   const loseWho = Object.keys(d).filter((i) => d[i].length).map(Number);
   const lw = whoWord(loseWho);
   const loseHead = `Less cover ${lw === 'you both' ? 'for you both' : lw === 'your partner' ? 'for your partner' : lw === 'you' ? 'for you' : ''} than ${lw === 'your partner' ? 'they have' : 'you have'} now (${lose.length})`;
-  const loseHtml = lose.length ? `<div class="lose">${lose.length > 6 ? `<details data-row="card-lose"><summary>${loseHead}</summary>${list(lose)}</details>` : `<div class="cd-h">${loseHead}</div>${list(lose)}`}</div>` : '';
+  const loseHtml = lose.length ? `<div class="lose">${lose.length > 8 ? `<details data-row="card-lose"><summary>${loseHead}</summary>${list(lose)}</details>` : `<div class="cd-h">${loseHead}</div>${list(lose)}`}</div>` : '';
   return `<div class="coverdiff">${newLine}${loseHtml}${gainHtml}</div>`;
 }
 
