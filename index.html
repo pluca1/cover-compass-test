@@ -3837,7 +3837,7 @@ function render(list, anyMap, netMap, data, current) {
   const rowsShown = { amb2: top.some((r) => r.ambAddOn), excess: top.some((r) => r.hospital?.excess || r.hospital?.copay), amb: top.some((r) => r.ambulance || r.ambAddOn), mls: top.some((r) => r.mls), baby: top.some((r) => r.babyUpgrade) };
   factKeys = null;
   {
-    const order = ['pref', 'xval', 'first', 'self'];
+    const order = ['pref', 'xval', 'big', 'first', 'self'];
     const ks = new Set(top.flatMap((r) => factRows(r, (S.preferred ? anyMap : netMap).get(keyOf(r)), vsSelfOf(r)).map((x) => x[0])));
     factKeys = order.filter((k) => ks.has(k));
   }
@@ -3847,7 +3847,7 @@ function render(list, anyMap, netMap, data, current) {
   const roleWords = { cheap: 'the cheapest', rec: 'our best-value pick', up: 'an upgrade that still costs less than you pay now', alt1: 'the runner-up (the cheapest genuinely different option)', alt2: 'the 2nd runner-up' };
   const roles = top.map((r) => roleWords[cardRole.get(r)]).filter(Boolean);
   const rolesTxt = roles.length > 1 ? `${roles.slice(0, -1).join(', ')} and ${roles[roles.length - 1]}` : roles[0] || '';
-  parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p class="toproles">${rolesTxt ? `${cap1(rolesTxt)}.` : ''}</p>${rankY1Offered ? `<div class="rankon"><span>${rankY1 ? '<b>Ranked on your first year:</b> waiting periods mean some of the services you entered won’t be paid by a new policy this year.' : '<b>Ranked from year 2:</b> as if waiting periods were already served.'}</span><span class="seg" role="group" aria-label="Rank on"><button type="button" data-rankon="y1" aria-pressed="${rankY1}">Year 1</button><button type="button" data-rankon="ongoing" aria-pressed="${!rankY1}">From year 2</button></span></div>` : ''}<p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? ' Savings are against your existing cover.' : ''}</p></div>`);
+  parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p class="toproles">${rolesTxt ? `${cap1(rolesTxt)}.` : ''}</p>${rankY1Offered ? `<div class="rankon"><span>${rankY1 ? `<b>Ranked on your first year:</b> waiting periods mean some of the services you entered won’t be paid by a new policy this year.${(() => { const no = S.want !== 'H' ? bigItems().filter((id) => bigStatus(list[0], id)?.none) : []; return no.length ? ` So the cheapest options this year don’t cover ${esc(no.map(bigName).join(' or ').toLowerCase())} at all. Choose <b>From year 2</b> to rank the policies that pay for ${no.length === 1 ? 'it' : 'them'} once the wait is served.` : ''; })()}` : '<b>Ranked from year 2:</b> as if waiting periods were already served.'}</span><span class="seg" role="group" aria-label="Rank on"><button type="button" data-rankon="y1" aria-pressed="${rankY1}">Year 1</button><button type="button" data-rankon="ongoing" aria-pressed="${!rankY1}">From year 2</button></span></div>` : ''}<p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? ' Savings are against your existing cover.' : ''}</p></div>`);
   const scens = SCENARIOS.filter((x) => (x.usage && S.want !== 'H') || (x.stay && S.want !== 'E'));
   const on = new Set(S.scen || []);
   parts.push(`<div class="scenbar" role="group" aria-label="What if"><span class="scenlbl">What if, on top of what you entered, you had…</span>${scens.map((x) => `<button type="button" class="scenbub" data-scen="${x.id}" aria-pressed="${on.has(x.id)}" title="${esc(x.desc)}">${esc(x.label)}</button>`).join('')}${on.size ? '<button type="button" class="textbtn" data-scen="">Clear</button>' : ''}</div>
@@ -4553,7 +4553,7 @@ function alignCards() {
   for (const c of cards) { const sb = c.querySelector('.sblocks'); const one = sb?.querySelector('.sblock.one'); if (one && sb.style.minHeight) one.style.minHeight = sb.style.minHeight; }
   // why-it-stands-out and the detail rows, each level across cards
   same(cards.map((c) => c.querySelector('.whyline')));
-  for (const k of ['pref', 'xval', 'first', 'self']) same(cards.map((c) => c.querySelector(`.fact[data-k="${k}"]`)));
+  for (const k of ['pref', 'xval', 'big', 'first', 'self']) same(cards.map((c) => c.querySelector(`.fact[data-k="${k}"]`)));
   // fund line and policy name first, so "One family policy…" sits on the same line on every card
   for (const sel of blocks.slice(0, 6)) same(cards.map((c) => c.querySelector(sel)));
   // services in open breakdowns: same service on the same line in every card
@@ -7051,21 +7051,40 @@ function factRows(r, other, vsSelf) {
       rows.push(['xval', 'Extras', `<span class="${d >= 0 ? 'save' : 'cost'}">Get back ${xp.est ? 'about ' : ''}${fmt(Math.abs(d))} ${d >= 0 ? 'more' : 'less'} than you pay in extras premiums</span>`]);
     }
   }
-  if (rankY1) rows.push(['first', 'From year 2', yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'Same as year 1' : `${fmt(yr2(r))} a year`]);
+  {
+    const ids = S.want !== 'H' ? bigItems() : [];
+    const st = ids.map((id) => [id, bigStatus(r, id)]).filter(([, x]) => x);
+    if (st.length) rows.push(['big', st.length === 1 ? bigName(st[0][0]) : FACT_LABEL.big, st.map(([id, x]) => `<span class="${x.cls}">${st.length > 1 ? `${esc(bigName(id))}: ` : ''}${x.t}</span>`).join('<br>')]);
+  }
+  if (rankY1) rows.push(['first', 'From year 2', yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'No change' : `${fmt(yr2(r))} a year`]);
   else if (whatIf?.first) rows.push(['first', 'Waiting periods', f != null && f > r.total + 0.5 ? `<span class="cost">+${fmt(f - r.total)} in year 1</span> <span class="hint">(${fmt(f)} total)</span>` : 'No effect on your services']);
-  if (vsSelf != null) rows.push(['self', 'vs paying for services yourself', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${vsSelf >= 0 ? '' : '+'}${fmt(Math.abs(vsSelf))} ${vsSelf >= 0 ? 'less' : 'more'}</span>`]);
+  if (vsSelf != null) rows.push(['self', 'Compared with no cover', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${fmt(Math.abs(vsSelf))} a year ${vsSelf >= 0 ? 'cheaper' : 'dearer'}</span>`]);
   return rows;
 }
 // preferred providers: the fund's network dentists, physios and optometrists, which charge members less
 const PREF_LABEL = () => (S.preferred ? 'Using any provider instead' : "Using the fund's preferred providers");
-const FACT_LABEL = { xval: 'Extras', first: 'Waiting periods', self: 'vs paying for services yourself' };
+const FACT_LABEL = { xval: 'Extras', first: 'Waiting periods', self: 'Compared with no cover', big: 'Big-ticket services' };
+// Big-ticket services entered (a fee of $1,000+, e.g. braces): whether this option pays for them, and when.
+function bigItems() { return (lastList[0]?.extras?.lines || []).filter((l) => l.fee >= 1000).map((l) => l.id).filter((x, i, a) => a.indexOf(x) === i); }
+const bigName = (id) => (CATALOGUE.find((c) => c.id === id)?.label || id).split(/[,(]/)[0].trim();
+function bigStatus(r, id) {
+  const ls = (r.extras?.lines || []).filter((l) => l.id === id);
+  if (!ls.length) return null;
+  const back = ls.reduce((t, l) => t + (l.benefit || 0), 0), fee = ls.reduce((t, l) => t + l.fee, 0);
+  if (!ls.some((l) => l.covered)) return { cls: 'cost', t: 'Not covered by this policy', none: true };
+  const cat = ls.find((l) => l.cat)?.cat;
+  const w = Math.max(0, ...r.products.map((p) => p.e?.svc?.[cat]?.w || 0));
+  if (ls.some((l) => l.inWait)) return { cls: 'cost', t: `Covered after a ${w}-month wait: nothing back in year 1` };
+  return { cls: back > 0 ? 'save' : 'cost', t: `${fmt(back)} back of ${fmt(fee)}${w ? ` (after a ${w}-month wait)` : ''}` };
+}
 // what a blank row means for a card that doesn't have it
 const FACT_BLANK = { pref: 'No saving for this option', first: 'No effect on your services' };
+
 function cardFacts(r, other, vsSelf) {
   let rows = factRows(r, other, vsSelf);
   if (factKeys) {
     const have = new Map(rows.map((x) => [x[0], x]));
-    rows = [...factKeys].map((k) => have.get(k) || [k, k === 'first' && rankY1 ? 'From year 2' : k === 'pref' ? PREF_LABEL() : FACT_LABEL[k], FACT_BLANK[k] || '–']);
+    rows = [...factKeys].map((k) => have.get(k) || [k, k === 'first' && rankY1 ? 'From year 2' : k === 'pref' ? PREF_LABEL() : k === 'big' && bigItems().length === 1 ? bigName(bigItems()[0]) : FACT_LABEL[k], FACT_BLANK[k] || '–']);
   }
   if (!rows.length) return '';
   return `<dl class="facts">${rows.map(([k, l, v]) => `<div class="fact" data-k="${k}"><dt>${l}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
