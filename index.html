@@ -1636,7 +1636,7 @@ const PRESETS = [
   },
   {
     id: 'braces', label: 'Kids with braces',
-    desc: "Family where one child is getting braces. Orthodontics usually has a 12-month waiting period and a lifetime limit per person, so a new policy won't pay for braces that start in the next 12 months: check the year-1 figures. Bronze hospital cover for the family, which covers tonsils, grommets and broken bones.",
+    desc: "Family where one child is getting braces. Orthodontics usually has a 12-month waiting period and a lifetime limit per person, so a new policy won't pay for braces that start in the next 12 months: check the year-1 figures. Lifetime orthodontic limits don't always carry over if you change funds. Bronze hospital cover for the family, which covers tonsils, grommets and broken bones.",
     cover: 'F', ages: [44, 42], kids: 2, want: 'HE',
     hosp: { minTier: 'Bronze', maxExcess: 750 }, hospUse: { 2: { cats: ['TonsilsAdenoidsGrommets'] }, 3: { cats: ['TonsilsAdenoidsGrommets'] } },
     usage: {
@@ -2148,13 +2148,17 @@ function extrasBenefits(product, usage, opts = {}) {
           if (b > r.benefit) r = { ...r, benefit: round2(b), basis: rules[ri].label };
         }
       }
-      lines.push({ person: u.person, id: u.id, label: item.label, fee, ...r });
+      const line = { person: u.person, id: u.id, label: item.label, fee, ...r };
+      // what the person's current policy pays for this service (when switching): u.old, one per service
+      if (u.old?.length) line.old = u.old[Math.min(n, u.old.length - 1)];
+      lines.push(line);
     }
   }
 
   // 1b) waiting periods (first year on a new policy). Services are assumed to be spread evenly through
   // the year, so the share that falls inside the wait pays nothing. Waits already served on the person's
-  // current cover (opts.served: categories it covers) carry over and are skipped.
+  // current cover (opts.served: categories it covers) carry over and are skipped, except that a benefit higher
+  // than the current policy pays (line.old) has its own wait: until it's served, the current benefit is paid.
   // opts.year2: the second year, where only the part of a wait longer than 12 months still applies
   // (e.g. a 24-month wait on braces still covers all of year 2).
   if (opts.firstYear || opts.year2) {
@@ -2165,16 +2169,24 @@ function extrasBenefits(product, usage, opts = {}) {
     for (const l of lines) {
       const wFull = l.cat && product.e?.svc?.[l.cat]?.w;
       const w = opts.firstYear ? wFull : wFull - 12; // months of the wait falling in this year
-      if (!wFull || w <= 0 || served.has(l.cat) || l.benefit <= 0) continue;
+      if (!wFull || w <= 0 || l.benefit <= 0) continue;
       const key = `${l.person}:${l.id}`;
       const inWait = w >= 12 ? totals[key] : Math.round((totals[key] * w) / 12);
       seen[key] = (seen[key] || 0) + 1;
-      if (seen[key] <= inWait) {
-        l.benefit = 0;
-        l.capped = `${wFull}-month waiting period`;
-        l.inWait = true;
+      if (seen[key] > inWait) continue;
+      if (served.has(l.cat)) {
+        // served on current cover: only a higher benefit waits, paying the current one meanwhile
+        if (l.old == null || l.benefit <= l.old + 0.5) continue;
+        l.benefit = round2(Math.max(0, l.old));
+        l.capped = `${wFull}-month wait on the higher benefit`;
+        l.upWait = true;
+        continue;
       }
+      l.benefit = 0;
+      l.capped = `${wFull}-month waiting period`;
+      l.inWait = true;
     }
+    if (lines.some((l) => l.upWait)) notes.add('Benefits higher than your current policy pays have a new wait: until it is served you get your current benefit.');
     if (lines.some((l) => l.inWait)) notes.add(opts.firstYear ? 'First year: services during waiting periods pay nothing.' : 'Year 2: services still in a waiting period longer than 12 months pay nothing.');
   }
 
@@ -3362,6 +3374,23 @@ function changed(structural) {
   timer = setTimeout(compute, 120);
 }
 
+// Switching: what each person's current extras policy pays for each service they entered (u.old, one per service).
+// A new policy that pays more makes you wait for the higher benefit, paying the current one meanwhile.
+function oldBenefitsInto(usage, preferred) {
+  if (S.want === 'H') return;
+  const sep = partnerSeparate();
+  [0, 1].forEach((si) => {
+    if (si === 1 && !sep) return;
+    const ep = currentProducts(curSets()[si]).find((p) => p.e && (p.k === 'E' || p.k === 'C'));
+    if (!ep) return;
+    const mine = usage.filter((u) => (si === 1 ? u.person === 1 : !(sep && u.person === 1)));
+    if (!mine.length) return;
+    const res = extrasBenefits(ep, mine, { fees: S.fees, preferred });
+    const by = {};
+    for (const l of res.lines) (by[`${l.person}:${l.id}`] ||= []).push(l.benefit);
+    for (const u of mine) if (by[`${u.person}:${u.id}`]) u.old = by[`${u.person}:${u.id}`];
+  });
+}
 function query(preferred) {
   const usage = [];
   const nPeople = people().length;
@@ -3370,6 +3399,7 @@ function query(preferred) {
     if (Number(p) >= kidStart() && !kidsCovered()) continue; // children aren't on a single/couple policy: costed separately
     for (const [id, count] of Object.entries(items)) usage.push({ person: Number(p), id, count, fee: S.fees[id] });
   }
+  oldBenefitsInto(usage, preferred);
   const q = {
     want: S.want, preferred, fees: S.fees, usage, mixFunds: S.mixFunds !== false,
     firstYear: false, year2: true, served: servedCategories(),
@@ -7081,7 +7111,7 @@ function factRows(r, other, vsSelf) {
   }
   {
     const ws = waitList(r), tip = waitTip(r, ws, f);
-    const wl = ws.length ? ws.slice(0, 3).map((x) => `${esc(x.g)}: ${x.w}-month wait`).join('<br>') + (ws.length > 3 ? `<br>+${ws.length - 3} more` : '') : '';
+    const wl = ws.length ? ws.slice(0, 3).map((x) => `${esc(x.g)}: ${x.w}-month wait${x.up ? ' on the higher benefit' : ''}`).join('<br>') + (ws.length > 3 ? `<br>+${ws.length - 3} more` : '') : '';
     if (rankY1) rows.push(['first', `From year 2${tip}`, yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'No change' : `${fmt(yr2(r))} a year`]);
     else if (whatIf?.first) rows.push(['first', `Waiting periods${tip}`, ws.length ? `<span class="cost">${wl}</span>${f != null && f > r.total + 0.5 ? `<span class="hint wsub">${fmt(f - r.total)} more in year 1</span>` : ''}` : 'None for your services']);
   }
@@ -7107,9 +7137,13 @@ function bigStatus(r, id) {
   if (!ls.some((l) => l.covered)) return { cls: 'cost', t: 'Not covered by this policy', none: true };
   const cat = ls.find((l) => l.cat)?.cat;
   const w = Math.max(0, ...r.products.map((p) => p.e?.svc?.[cat]?.w || 0));
+  const served = (servedCategories() || []).includes(cat);
   if (ls.every((l) => l.inWait)) return { cls: 'cost', t: `Covered after a ${w}-month wait: nothing back ${w > 12 || !rankY1 ? `until year ${Math.floor(w / 12) + 1}` : 'in year 1'}` };
+  if (ls.some((l) => l.upWait)) return { cls: 'cost', t: `${fmt(back)} back of ${fmt(fee)} in year 1: your current benefit, until the ${w}-month wait on the higher benefit is served` };
   if (ls.some((l) => l.inWait)) return { cls: 'save', t: `${fmt(back)} back of ${fmt(fee)} (the rest falls in the ${w}-month wait)` };
-  return { cls: back > 0 ? 'save' : 'cost', t: `${fmt(back)} back of ${fmt(fee)}${w ? ` (after a ${w}-month wait)` : ''}` };
+  const more = served && w && ls.some((l) => l.old != null && l.benefit > l.old + 0.5);
+  const was = ls.reduce((t, l) => t + (l.old ?? 0), 0);
+  return { cls: back > 0 ? 'save' : 'cost', t: `${fmt(back)} back of ${fmt(fee)}${more ? ` (you get ${fmt(was)} now: the extra has a ${w}-month wait)` : w && !served ? ` (after a ${w}-month wait)` : ''}` };
 }
 // what a blank row means for a card that doesn't have it
 const FACT_BLANK = { pref: 'No saving for this option', first: 'None for your services' };
@@ -7121,26 +7155,32 @@ function waitList(r) {
   const n = {};
   for (const l of r.extras?.lines || []) n[`${l.person}:${l.id}`] = (n[`${l.person}:${l.id}`] || 0) + 1;
   for (const l of r.extras?.lines || []) {
-    if (!l.covered || !l.cat || served.has(l.cat)) continue;
+    if (!l.covered || !l.cat) continue;
     const w = Math.max(0, ...r.products.map((p) => p.e?.svc?.[l.cat]?.w || 0));
     if (!w) continue;
+    // served on current cover: only a higher benefit than now has a wait (the current benefit is paid meanwhile)
+    const up = served.has(l.cat);
+    if (up && !l.upWait && !(l.old != null && l.benefit > l.old + 0.5)) continue;
     // only waits that cost something in year 1: a service actually falls inside the wait (as the year-1 figures count it)
     const k = n[`${l.person}:${l.id}`];
-    const bites = l.inWait || (l.benefit > 0 && (w >= 12 ? k : Math.round((k * w) / 12)) > 0);
+    const bites = l.inWait || l.upWait || (l.benefit > 0 && (w >= 12 ? k : Math.round((k * w) / 12)) > 0);
     if (!bites) continue;
     const g = l.id === 'd881' ? 'Braces' : CATALOGUE.find((c) => c.id === l.id)?.group || l.cat;
-    by.set(g, Math.max(by.get(g) || 0, w));
+    const was = by.get(g);
+    by.set(g, { w: Math.max(was?.w || 0, w), up: (was ? was.up : true) && up });
   }
-  return [...by].map(([g, w]) => ({ g, w })).sort((a, b) => b.w - a.w);
+  return [...by].map(([g, x]) => ({ g, w: x.w, up: x.up })).sort((a, b) => b.w - a.w);
 }
 // The "i" on the waiting periods row: what the waits are, and whether the total counts them.
 function waitTip(r, ws, f) {
-  const list = ws.map((x) => `${x.g.toLowerCase()} (${x.w} months)`).join(', ');
-  const has = ws.length ? `On this policy you'd serve new waiting periods for ${esc(list)}: services you use during a wait pay nothing.` : 'None of your services would fall in a waiting period on this policy.';
+  const fresh = ws.filter((x) => !x.up).map((x) => `${x.g.toLowerCase()} (${x.w} months)`).join(', ');
+  const ups = ws.filter((x) => x.up).map((x) => `${x.g.toLowerCase()} (${x.w} months)`).join(', ');
+  const has = !ws.length ? 'None of your services would fall in a waiting period on this policy.'
+    : `${fresh ? `On this policy you'd serve new waiting periods for ${esc(fresh)}: services you use during a wait pay nothing.` : ''}${ups ? `${fresh ? ' ' : ''}It pays more than your current policy for ${esc(ups)}: the extra has its own wait, and until it's served you'd get what your current policy pays.` : ''}`;
   const body = rankY1
     ? `${has} The total above is for year 1, so it already counts that.${yr2(r) != null && Math.abs(yr2(r) - r.total) >= 1 ? ` Once the waits are served it's ${fmt(yr2(r))} a year.` : ''}`
     : `${has} The total above assumes the waits are already served (your cost from year 2).${f != null && f > r.total + 0.5 ? ` In year 1 you'd pay about ${fmt(f - r.total)} more: ${fmt(f)} in total.` : ''}`;
-  return ` <span class="info" tabindex="0" role="button" aria-label="About waiting periods">i<span class="tip" role="tooltip">${body}${servedCategories()?.length ? '<small>Waits you have already served on your current cover carry over and aren’t counted.</small>' : ''}</span></span>`;
+  return ` <span class="info" tabindex="0" role="button" aria-label="About waiting periods">i<span class="tip" role="tooltip">${body}${servedCategories()?.length ? `<small>Waits you’ve already served on your current cover carry over for the same benefits.${ups ? '' : ' Where a policy pays more, the extra has its own wait: until it’s served you’d get what your current policy pays.'}</small>` : ''}</span></span>`;
 }
 
 function cardFacts(r, other, vsSelf) {
