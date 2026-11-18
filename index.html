@@ -353,6 +353,8 @@ table.sbs td .pline .pv > details, table.sbs td .pline .pv > details > summary {
 .fact { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 12.5px; }
 .fact dt { color: var(--muted); }
 .fact dt { flex: 1 1 auto; min-width: 0; }
+.fact .wsub { display: block; font-weight: 400; font-size: 12px; margin-top: 2px; }
+.fact dt .info { margin-left: 4px; vertical-align: 1px; }
 .fact dd { margin: 0; font-weight: 700; text-align: right; flex: 0 1 auto; max-width: 62%; }
 .fact[data-k="xval"] dt { flex: 0 0 auto; }
 .fact[data-k="xval"] dd { white-space: normal; text-align: right; min-width: 0; }
@@ -7056,8 +7058,12 @@ function factRows(r, other, vsSelf) {
     const st = ids.map((id) => [id, bigStatus(r, id)]).filter(([, x]) => x);
     if (st.length) rows.push(['big', st.length === 1 ? bigName(st[0][0]) : FACT_LABEL.big, st.map(([id, x]) => `<span class="${x.cls}">${st.length > 1 ? `${esc(bigName(id))}: ` : ''}${x.t}</span>`).join('<br>')]);
   }
-  if (rankY1) rows.push(['first', 'From year 2', yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'No change' : `${fmt(yr2(r))} a year`]);
-  else if (whatIf?.first) rows.push(['first', 'Waiting periods', f != null && f > r.total + 0.5 ? `<span class="cost">+${fmt(f - r.total)} in year 1</span> <span class="hint">(${fmt(f)} total)</span>` : 'No effect on your services']);
+  {
+    const ws = waitList(r), tip = waitTip(r, ws, f);
+    const wl = ws.length ? ws.slice(0, 3).map((x) => `${esc(x.g)}: ${x.w}-month wait`).join('<br>') + (ws.length > 3 ? `<br>+${ws.length - 3} more` : '') : '';
+    if (rankY1) rows.push(['first', `From year 2${tip}`, yr2(r) == null ? '–' : Math.abs(yr2(r) - r.total) < 1 ? 'No change' : `${fmt(yr2(r))} a year`]);
+    else if (whatIf?.first) rows.push(['first', `Waiting periods${tip}`, ws.length ? `<span class="cost">${wl}</span>${f != null && f > r.total + 0.5 ? `<span class="hint wsub">${fmt(f - r.total)} more in year 1</span>` : ''}` : 'None for your services']);
+  }
   if (vsSelf != null) rows.push(['self', 'Compared with no cover', `<span class="${vsSelf >= 0 ? 'save' : 'cost'}">${fmt(Math.abs(vsSelf))} a year ${vsSelf >= 0 ? 'cheaper' : 'dearer'}</span>`]);
   return rows;
 }
@@ -7078,7 +7084,30 @@ function bigStatus(r, id) {
   return { cls: back > 0 ? 'save' : 'cost', t: `${fmt(back)} back of ${fmt(fee)}${w ? ` (after a ${w}-month wait)` : ''}` };
 }
 // what a blank row means for a card that doesn't have it
-const FACT_BLANK = { pref: 'No saving for this option', first: 'No effect on your services' };
+const FACT_BLANK = { pref: 'No saving for this option', first: 'None for your services' };
+// New waiting periods this option starts for the services entered (by service group, longest first).
+// Waits already served on current cover carry over and aren't listed.
+function waitList(r) {
+  const served = new Set(servedCategories() || []);
+  const by = new Map();
+  for (const l of r.extras?.lines || []) {
+    if (!l.covered || !l.cat || served.has(l.cat)) continue;
+    const w = Math.max(0, ...r.products.map((p) => p.e?.svc?.[l.cat]?.w || 0));
+    if (!w) continue;
+    const g = l.id === 'd881' ? 'Braces' : CATALOGUE.find((c) => c.id === l.id)?.group || l.cat;
+    by.set(g, Math.max(by.get(g) || 0, w));
+  }
+  return [...by].map(([g, w]) => ({ g, w })).sort((a, b) => b.w - a.w);
+}
+// The "i" on the waiting periods row: what the waits are, and whether the total counts them.
+function waitTip(r, ws, f) {
+  const list = ws.map((x) => `${x.g.toLowerCase()} (${x.w} months)`).join(', ');
+  const has = ws.length ? `On this policy you'd serve new waiting periods for ${esc(list)}: services you use during a wait pay nothing.` : 'None of your services has a waiting period to serve on this policy.';
+  const body = rankY1
+    ? `${has} The total above is for year 1, so it already counts that.${yr2(r) != null && Math.abs(yr2(r) - r.total) >= 1 ? ` Once the waits are served it's ${fmt(yr2(r))} a year.` : ''}`
+    : `${has} The total above assumes the waits are already served (your cost from year 2).${f != null && f > r.total + 0.5 ? ` In year 1 you'd pay about ${fmt(f - r.total)} more: ${fmt(f)} in total.` : ''}`;
+  return ` <span class="info" tabindex="0" role="button" aria-label="About waiting periods">i<span class="tip" role="tooltip">${body}${servedCategories()?.length ? '<small>Waits you have already served on your current cover carry over and aren’t counted.</small>' : ''}</span></span>`;
+}
 
 function cardFacts(r, other, vsSelf) {
   let rows = factRows(r, other, vsSelf);
