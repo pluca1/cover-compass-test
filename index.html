@@ -722,9 +722,10 @@ body.opts-open .optclose { display: block; }
 body.guiding .opttab, body.home-screen .opttab, body.home-screen .optshade { display: none; }
 /* what-if bubbles on phones: scroll sideways rather than stacking */
 @media (max-width: 640px) {
-  .scenbar { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; margin-right: -16px; }
-  .scenbar::-webkit-scrollbar { display: none; }
-  .scenbub, .scenlbl { flex: 0 0 auto; }
+  /* phones: the what-if buttons wrap across and down the screen (no sideways scrolling) */
+  .scenbar { flex-wrap: wrap; gap: 8px; }
+  .scenlbl { flex: 0 0 100%; }
+  .scenbub { flex: 0 0 auto; }
 }
 
 /* options sections fold up under their headings */
