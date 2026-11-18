@@ -684,6 +684,8 @@ body.guiding .wrap > .grid, body.guiding #footer { visibility: hidden; }
 .rankon .seg button { font: inherit; font-size: 12.5px; font-weight: 600; padding: 5px 12px; border: 0; background: none; color: var(--muted); cursor: pointer; }
 .rankon .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
 .nearnote { margin: 6px 0 0; font-size: 12px; color: var(--muted); line-height: 1.4; }
+.altwhy { margin: 8px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.altwhy b { color: var(--fg); }
 .nearnote .rk { font: inherit; font-weight: 600; }
 .tophead .toproles { font-weight: 600; color: var(--fg); margin-bottom: 2px; }
 .cardtot-n { display: flex; align-items: center; gap: 8px; }
@@ -6675,6 +6677,34 @@ function pickRecommended(list) {
   }
   return pick;
 }
+// Why an alternative card is shown: what's actually different from Option #1, and what it costs over it.
+function altWhy(r) {
+  const list = lastList, one = list[0];
+  if (!one || r === one) return '';
+  const idx = list.indexOf(r);
+  // the cheaper options it skipped over: near-copies of #1 only, or of another card too
+  const skipped = list.slice(1, idx).filter((x) => !topNow.includes(x));
+  const ofOne = skipped.every((x) => nearCopy(x, one));
+  const basis = skipped.length ? `the cheapest option that isn't a near-copy of ${ofOne ? 'Option #1' : 'the other cards'}` : 'the next cheapest option';
+  const diffs = [];
+  if (!!r.split !== !!one.split) diffs.push(r.split ? 'two separate policies instead of one' : 'one policy for both instead of two');
+  else {
+    const ids = new Set(one.products.map((p) => p.id));
+    const mine = r.products.filter((p) => !ids.has(p.id));
+    const theirs = one.products.filter((p) => !new Set(r.products.map((q) => q.id)).has(p.id));
+    for (const kind of ['H', 'E', 'C']) {
+      const a = mine.filter((p) => p.k === kind), b = theirs.filter((p) => p.k === kind);
+      if (!a.length) continue;
+      const what = kind === 'H' ? 'hospital policy' : kind === 'E' ? 'extras policy' : 'combined policy';
+      const tier = kind !== 'E' && b[0]?.h && a[0].h && a[0].h.tier !== b[0].h.tier ? `, ${TIER_LABEL[a[0].h.tier] || a[0].h.tier} instead of ${TIER_LABEL[b[0].h.tier] || b[0].h.tier}` : '';
+      diffs.push(`a different ${what} (${esc(policiesLabel(a))}${b.length ? ` instead of ${esc(policiesLabel(b))}` : ''}${tier})`);
+    }
+    if (one.noExtras && !r.noExtras) diffs.push('includes extras cover');
+    if (!one.noExtras && r.noExtras) diffs.push('no extras policy');
+  }
+  const d = r.total - one.total;
+  return `${basis}. It has ${diffs.join(', and ') || 'a different mix of policies'}${d >= 1 ? `, for ${fmt(d)} ${rankY1 ? 'more in year 1' : 'a year more'}` : ''}.`;
+}
 // "Options #2–#5 are near-copies of this one…" (ranges joined, each number a link to its row)
 function nearNote() {
   const ns = nearSkipped.map((r) => lastList.indexOf(r) + 1).sort((a, b) => a - b);
@@ -6736,7 +6766,8 @@ function cardBadges(r) {
   if (!b.length) {
     const role = cardRole.get(r);
     const label = role === 'alt1' ? 'Cheapest alternative' : role === 'alt2' ? 'Next alternative' : `${ordinal(list.indexOf(r) + 1)} cheapest`;
-    return { top: top([`<span class="badge rankb${role === 'alt1' ? ' silver' : role === 'alt2' ? ' bronze' : ''}">${label}</span>`]), why: '<div class="cardwhy"></div>' };
+    const reason = role === 'alt1' || role === 'alt2' ? altWhy(r) : '';
+    return { top: top([`<span class="badge rankb${role === 'alt1' ? ' silver' : role === 'alt2' ? ' bronze' : ''}">${label}</span>`]), why: `<div class="cardwhy">${reason ? `<p class="altwhy"><b>Why it's here:</b> ${reason}</p>` : ''}</div>` };
   }
   let why = '';
   if (upPick && r === upPick.r && !(recPick && r === recPick.r)) {
