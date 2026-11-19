@@ -741,6 +741,16 @@ body.opts-closed .opttab { display: flex; }
 /* phones and tablets: the floating button slides away while you scroll down, back when you scroll up */
 .opttab { transition: transform .25s ease, opacity .25s ease; }
 @media (max-width: 920px) { body.fab-away .opttab { transform: translateY(140%); opacity: 0; } }
+/* phones: a small round button in the bottom corner instead of a tall tab over the cards */
+@media (max-width: 640px) {
+  .opttab { top: auto; bottom: calc(14px + env(safe-area-inset-bottom, 0px)); left: calc(10px + env(safe-area-inset-left, 0px)); transform: none; border-radius: 999px; padding: 12px; gap: 0; box-shadow: 0 6px 18px rgba(15,90,73,.35); }
+  .opttab span:last-child { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .opttab:hover { transform: none; }
+  body.fab-away .opttab { transform: translateY(160%); }
+}
+/* badges keep their pill shape when a row wraps */
+.badges { align-items: flex-start; }
+.badge { align-self: flex-start; white-space: nowrap; line-height: 1.4; }
 body.opts-open .optclose { display: block; }
 @media (min-width: 921px) {
   body.opts-closed .grid { grid-template-columns: 0px minmax(0, 1fr); gap: 0; }
@@ -788,7 +798,7 @@ body.guiding .opttab, body.home-screen .opttab, body.home-screen .optshade { dis
 @media (max-width: 700px) { .nowbox .meter { flex-basis: 100%; max-width: none; min-width: 0; } .nowbox .meter-label { font-size: 19px; } }
 
 /* policy boxes: hospital and extras each on their own line, same weight, small label in front */
-.sb-line { display: grid; grid-template-columns: 66px minmax(0, 1fr); align-items: baseline; }
+.sb-line { display: grid; grid-template-columns: 78px minmax(0, 1fr); align-items: baseline; }
 .sb-line .sb-tag { justify-self: start; }
 .sb-line + .sb-line { margin-top: 5px; }
 .sb-tag { display: inline-block; vertical-align: 2px; font-family: var(--font-body, inherit); font-size: 9.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); background: rgba(0,0,0,.05); border-radius: 4px; padding: 1px 5px; margin-right: 6px; }
@@ -808,7 +818,7 @@ body.guiding .opttab, body.home-screen .opttab, body.home-screen .optshade { dis
 .tiernote .linkbtn { margin-left: 4px; }
 
 /* price and policy type line up with the policy names, not the Hospital/Extras labels */
-.sblock:has(.sb-line) .sb-cost { padding-left: 66px; }
+.sblock:has(.sb-line) .sb-cost { padding-left: 78px; }
 /* narrow cards (options panel open): label above the name, slightly smaller text */
 .top3 .card { container: card / inline-size; }
 @container card (max-width: 340px) {
@@ -968,7 +978,7 @@ table.sbs .lgrp .pv:has(> .lbar) .lsh { flex-basis: 100%; }
 
 /* the Hospital / Extras tag never breaks mid-word (the table lets other text wrap anywhere) */
 .sb-tag { white-space: nowrap; overflow-wrap: normal; word-break: keep-all; }
-table.sbs .sb-line { grid-template-columns: 66px minmax(0, 1fr); column-gap: 4px; }
+table.sbs .sb-line { grid-template-columns: 78px minmax(0, 1fr); column-gap: 4px; }
 /* price and policy type line up with the policy names, as on the cards */
 table.sbs .sblock:has(.sb-line) .sb-cost { padding-left: 70px; }
 
@@ -1364,7 +1374,7 @@ table.sbs td .hstack .pline .pv { font-size: 12.5px; }
           <button type="button" class="linkbtn" id="fundsClear">Clear (compare every fund)</button>
         </details>
         <label class="toggle" id="mix-wrap"><input type="checkbox" id="mixFunds">
-          <span><span class="lbl">Allow hospital and extras from different funds</span><br><span class="hint">For example Bupa hospital with HBF extras. Each policy gets its own rebate.</span></span></label>
+          <span><span class="lbl">Allow hospital and extras from different funds</span><br><span class="hint">For example Bupa hospital with HBF extras. Each policy gets its own rebate. Off: each person's hospital and extras come from one fund (with separate policies, partners can still be with different funds).</span></span></label>
         <label class="toggle"><input type="checkbox" id="preferred">
           <span><span class="lbl">I'll use the fund's preferred providers where possible</span> <button type="button" class="qi" data-g="preferred" aria-label="What are preferred providers?">?</button><br><span class="hint">Many funds pay more at their own network of dentists, physios and optometrists (e.g. 100% back on check-ups). Tick to rank on those prices. Both prices are shown either way.</span></span></label>
           </div>
@@ -1581,6 +1591,9 @@ const CATALOGUE = [
   { id: 'ac_s', group: 'Physio & allied', label: 'Acupuncture – follow-up', cat: 'Acupuncture', item: 'AcupunctureSubsequent', fee: 85 },
   { id: 'ps_i', group: 'Mental health & other allied', label: 'Psychology – initial session', cat: 'Psychology', item: 'PsychologyInitial', fee: 260 },
   { id: 'ps_s', group: 'Mental health & other allied', label: 'Psychology – follow-up session', cat: 'Psychology', item: 'PsychologySubsequent', fee: 240 },
+  // not a service people enter: a session under a GP mental health treatment plan, where Medicare pays a rebate and
+  // extras can't pay too (only the gap is paid); the app moves up to 10 sessions a year here
+  { id: 'ps_mc', group: 'Mental health & other allied', label: 'Psychology – session on a Medicare plan (gap)', fee: 141, hidden: true },
   { id: 'di_i', group: 'Mental health & other allied', label: 'Dietitian – initial', cat: 'Dietetics', item: 'DieteticsInitial', fee: 160 },
   { id: 'di_s', group: 'Mental health & other allied', label: 'Dietitian – follow-up', cat: 'Dietetics', item: 'DieteticsSubsequent', fee: 110 },
   { id: 'ot_i', group: 'Mental health & other allied', label: 'Occupational therapy – initial', cat: 'OccupationalTherapy', item: 'OccupationalTherapyInitial', fee: 220 },
@@ -1824,6 +1837,10 @@ const GLOSSARY = {
   preferred: 'Many funds have a network of preferred dentists, physios and optometrists where you get more back, sometimes 100% on check-ups or a free pair of glasses. Elsewhere you get the standard benefit.',
 };
 
+// Better Access: Medicare pays a rebate on up to 10 psychology sessions a year with a GP mental health treatment plan
+// (registered psychologist, 50+ minutes: item 80110). Extras can't pay for the same session.
+const PSYCH_MEDICARE = { rebate: 98.95, sessions: 10 };
+
 // ---- data.js
 // Data files store hospital ('h') and extras ('e') details once in tables; products point to them by index.
 // hydrate() turns a file back into a plain product list.
@@ -1944,6 +1961,8 @@ function rulesFor(product, preferred) {
 const CAT_BY_ID = Object.fromEntries(CATALOGUE.map((c) => [c.id, c]));
 const asArr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
 const round2 = (x) => Math.round(x * 100) / 100;
+// a course of braces usually runs about two years: an orthodontic lifetime limit is spread over it
+const LIFE_YEARS = 2;
 
 // ---------------------------------------------------------------- rebate / MLS / premium
 
@@ -2207,7 +2226,9 @@ function extrasBenefits(product, usage, opts = {}) {
   // opts.year2: the second year, where only the part of a wait longer than 12 months still applies
   // (e.g. a 24-month wait on braces still covers all of year 2).
   if (opts.firstYear || opts.year2) {
-    const served = new Set(opts.served || []);
+    // waits served on current cover, per person where known (someone not on the current policy has served none)
+    const servedAll = new Set(opts.served || []);
+    const servedOf = (p) => (opts.servedBy && opts.servedBy[p] ? new Set(opts.servedBy[p]) : servedAll);
     const seen = {};
     const totals = {};
     for (const l of lines) totals[`${l.person}:${l.id}`] = (totals[`${l.person}:${l.id}`] || 0) + 1;
@@ -2219,7 +2240,7 @@ function extrasBenefits(product, usage, opts = {}) {
       const inWait = w >= 12 ? totals[key] : Math.round((totals[key] * w) / 12);
       seen[key] = (seen[key] || 0) + 1;
       if (seen[key] > inWait) continue;
-      if (served.has(l.cat)) {
+      if (servedOf(l.person).has(l.cat)) {
         // served on current cover: only a higher benefit waits, paying the current one meanwhile
         if (l.old == null || l.benefit <= l.old + 0.5) continue;
         l.benefit = round2(Math.max(0, l.old));
@@ -2281,7 +2302,10 @@ function extrasBenefits(product, usage, opts = {}) {
       pol = f.pol;
       notes.add(`${lim.t}: limit taken from fund text – “${lim.free}”`);
     }
-    if (lim.life != null) pol = pol == null ? lim.life : Math.min(pol, lim.life);
+    // lifetime limits are per person; for orthodontics spread one lifetime limit over a typical treatment
+    // (LIFE_YEARS), so a single year can't use all of it and later years don't pay it again in full
+    const life = lim.life != null ? (lim.s.includes('Orthodontic') ? round2(lim.life / LIFE_YEARS) : lim.life) : null;
+    if (lim.life != null) for (const l of gl) l.lifeLimit = lim.life;
     const capLines = (ls, cap, why) => {
       let left = cap;
       for (const l of ls) {
@@ -2296,6 +2320,11 @@ function extrasBenefits(product, usage, opts = {}) {
       for (const p of persons) capLines(gl.filter((l) => l.person === p), pp, `annual limit $${pp} per person reached`);
     }
     if (pol != null) capLines(gl, pol, `annual limit $${pol} reached`);
+    if (life != null) {
+      const persons = [...new Set(gl.map((l) => l.person))];
+      const why = life < lim.life ? `lifetime limit $${lim.life} per person, about $${Math.round(life)} a year over a ${LIFE_YEARS}-year treatment` : `lifetime limit $${lim.life} per person`;
+      for (const p of persons) capLines(gl.filter((l) => l.person === p), life, why);
+    }
   }
 
   // 4b) overall caps across all extras (some products have one combined limit)
@@ -2410,15 +2439,33 @@ function headlineExcess(product) {
 // "Accept restricted cover" only ever stands in for these: the categories Basic, Bronze and Silver policies may
 // cover at public-hospital (shared-ward) rates. Anything else needed must be fully covered.
 const RESTRICTED_OK = ['HospitalPsychiatric', 'Rehabilitation', 'PalliativeCare'];
+/** The most a daily co-payment can add to one hospital stay (0 when the policy has none). */
+function coPayCap(product) {
+  const cp = product.cp;
+  if (!cp || cp.type === 'None') return 0;
+  const max = cp.PrivateMax ?? cp.SharedMax;
+  if (max != null) return max;
+  // no published cap: assume a typical long stay of 10 nights
+  return (cp.Private ?? cp.Shared ?? 0) * 10;
+}
+/** Co-payment for a same-day admission (0 when none). */
+function dayCoPay(product) {
+  const cp = product.cp;
+  if (!cp || cp.type === 'None') return 0;
+  return cp.DaySurgery ?? cp.Private ?? cp.Shared ?? 0;
+}
 function hospitalMatches(product, req) {
   const h = product.h;
   if (!h) return false;
   // the tier is a hard floor unless it's only a shortcut for the categories (tierIsHint): then the ticked categories decide
   if (req.minTier && !req.tierIsHint && tierRank(h.tier) < tierRank(req.minTier)) return false;
-  if (req.maxExcess != null && headlineExcess(product) > req.maxExcess) return false;
-  // excess waived for same-day surgery / for children (or no excess at all)
+  // a picked level above Basic never accepts a Basic (accident-only) policy, even when no categories are ticked
+  if (req.minTier && req.minTier !== 'Basic' && h.tier === 'Basic') return false;
+  // the limit is what one stay can cost you: the excess plus any daily co-payment
+  if (req.maxExcess != null && headlineExcess(product) + coPayCap(product) > req.maxExcess) return false;
+  // excess waived for same-day surgery / for children (or no excess at all); a same-day co-payment counts as an excess
   const waives = (w) => headlineExcess(product) === 0 || (product.xs?.waivers || []).includes(w);
-  if (req.noDayExcess && !waives('DaySurgery')) return false;
+  if (req.noDayExcess && (!waives('DaySurgery') || dayCoPay(product) > 0)) return false;
   if (req.noKidsExcess && !waives('Dependents')) return false;
   for (const c of req.cats || []) {
     const v = h.cats[c];
@@ -2439,11 +2486,12 @@ function rank(products, q) {
   const h = q.household;
   const cover = h.cover;
   const oldest = Math.max(...(h.adultAges || [0]));
-  const eligible = (p) => { if (GROUP_ONLY.some((g) => g.re.test(p.n)) || CORPORATE_ONLY.includes(providerOf(p))) return false; const e = ELIGIBILITY[providerOf(p)]; return !e || oldest >= (e.minAge || 0); };
+  // "Young" products are aimed at people in their 20s and early 30s: not offered to older households
+  const eligible = (p) => { if (GROUP_ONLY.some((g) => g.re.test(p.n)) || CORPORATE_ONLY.includes(providerOf(p))) return false; if (/\byoung\b/i.test(p.n) && oldest > 35) return false; const e = ELIGIBILITY[providerOf(p)]; return !e || oldest >= (e.minAge || 0); };
   const pool = products.filter((p) => p.cv === cover && !p.closed && eligible(p));
   const results = [];
 
-  const evalExtras = (p) => extrasBenefits(p, q.usage, { fees: q.fees, preferred: q.preferred, firstYear: q.firstYear, year2: !q.firstYear && q.year2, served: q.served });
+  const evalExtras = (p) => extrasBenefits(p, q.usage, { fees: q.fees, preferred: q.preferred, firstYear: q.firstYear, year2: !q.firstYear && q.year2, served: q.served, servedBy: q.servedBy });
   const evalHospital = (p) => hospitalCosts(p, q);
 
   if (q.want === 'E') {
@@ -2508,10 +2556,7 @@ function rank(products, q) {
     }
   }
   // 'must include ambulance': add the cheapest stand-alone ambulance policy to options without it
-  const ambOnly = q.ambulance?.required && !AMBULANCE.stateCovered.includes(q.state)
-    ? pool.filter((p) => p.k === 'E' && !Object.keys(p.e?.svc || {}).length && ['EmergencyOnly', 'EmergencyAndNonEmergency'].includes(p.amb))
-      .map((p) => ({ p, prem: premiumFor(p, h) })).sort((a, b) => a.prem.net - b.prem.net)[0]
-    : null;
+  const ambOnly = q.ambulance?.required && !AMBULANCE.stateCovered.includes(q.state) ? cheapestAmbulanceOnly(pool, h) : null;
   for (const r of results) {
     addAmbulance(r, q);
     if (ambOnly && !r.ambulanceCovered) {
@@ -2527,6 +2572,12 @@ function rank(products, q) {
 }
 
 const NO_EXTRAS = { f: '', n: 'No extras', k: 'E', e: { svc: {}, lim: [] } };
+
+/** The cheapest stand-alone ambulance policy for this household (null when none is sold). */
+function cheapestAmbulanceOnly(products, h) {
+  return products.filter((p) => p.cv === h.cover && !p.closed && p.k === 'E' && !Object.keys(p.e?.svc || {}).length && ['EmergencyOnly', 'EmergencyAndNonEmergency'].includes(p.amb))
+    .map((p) => ({ p, prem: premiumFor(p, h) })).sort((a, b) => a.prem.net - b.prem.net)[0] || null;
+}
 
 /**
  * Price a specific setup (e.g. the cover someone holds now) on the same basis as `rank`.
@@ -2554,6 +2605,12 @@ function evaluate(products, q, actualMonthly = {}) {
   const r = mk(products, prem, ex, hosp, { mixed: new Set(products.map(providerOf)).size > 1, ...split });
   if (!hp && q.want !== 'E') r.noHospital = true;
   addAmbulance(r, q);
+  // ambulance cover wanted but not held: count the cheaper of the trips and an ambulance-only policy,
+  // as the options are costed the same way
+  if (q.ambulance?.required && !r.ambulanceCovered && q.ambOnlyNet != null && !AMBULANCE.stateCovered.includes(q.state)) {
+    const was = r.ambulance || 0;
+    if (q.ambOnlyNet < was || !was) { r.total = round2(r.total - was + q.ambOnlyNet); r.ambulance = 0; r.ambViaPolicy = round2(q.ambOnlyNet); }
+  }
   addSurcharge(r, q);
   // no hospital cover held now: above the threshold that costs the Medicare levy surcharge
   // hospital cover whose excess is over the limit ($750 single, $1,500 otherwise) doesn't avoid the surcharge either
@@ -2677,7 +2734,9 @@ function rankSplit(singles, q, split = {}) {
       ? { ...q.hospital, cats, minTier, stays, allowRestricted: own?.allowRestricted ?? q.hospital.allowRestricted, maxExcess: own?.maxExcess ?? q.hospital.maxExcess,
         noDayExcess: own?.noDayExcess ?? q.hospital.noDayExcess, noKidsExcess: withKids && (own?.noKidsExcess ?? q.hospital.noKidsExcess) }
       : i === needs ? q.hospital : { ...q.hospital, cats: [], minTier: 'Basic', admissions: 0, stays: [], allowRestricted: false };
-    const qi = { ...q, household: hh, usage, hospital, ambulance: i === needs ? q.ambulance : { trips: 0 } };
+    // ambulance cover is needed by each partner; an expected trip is counted once (on the first partner's policy)
+    const servedBy = q.servedBy ? Object.fromEntries(persons.map((p) => [me(p), q.servedBy[p] || []])) : undefined;
+    const qi = { ...q, servedBy, household: hh, usage, hospital, ambulance: { ...(q.ambulance || {}), trips: i === needs ? (q.ambulance?.trips || 0) : 0 } };
     // each partner's three cheapest, plus their cheapest at every higher level of hospital cover, so separate
     // policies aren't only ever the bare minimum for both
     const all = rank(split.lists?.[i] || singles, qi);
@@ -2728,7 +2787,11 @@ function combineSplit(a, b, needs, keepPersons = false) {
       copay: round2((a.hospital?.copay || 0) + (b.hospital?.copay || 0)),
     },
     ambulance: round2((a.ambulance || 0) + (b.ambulance || 0)),
-    ambulanceCovered: a.ambulanceCovered || b.ambulanceCovered,
+    // covered only when both partners are (one partner's ambulance cover doesn't cover the other)
+    ambulanceCovered: !!(a.ambulanceCovered && b.ambulanceCovered),
+    ambulanceBy: [!!a.ambulanceCovered, !!b.ambulanceCovered],
+    ambAddOn: a.ambAddOn || b.ambAddOn ? { p: (a.ambAddOn || b.ambAddOn).p, net: round2((a.ambAddOn?.net || 0) + (b.ambAddOn?.net || 0)), who: [a.ambAddOn ? 0 : null, b.ambAddOn ? 1 : null].filter((x) => x != null) } : undefined,
+    ambViaPolicy: a.ambViaPolicy || b.ambViaPolicy ? round2((a.ambViaPolicy || 0) + (b.ambViaPolicy || 0)) : undefined,
     mls: round2((a.mls || 0) + (b.mls || 0)) || undefined,
     mlsEst: a.mlsEst || b.mlsEst,
     mlsXs: a.mlsXs || b.mlsXs,
@@ -2908,11 +2971,13 @@ function ageProblem(v, i = 0) {
 function adultAges() { return S.cover === 'C' || S.cover === 'F' ? [S.ages[0], S.ages[1]] : [S.ages[0]]; }
 function adultAbd() { const a = S.abd || ['', '']; return S.cover === 'C' || S.cover === 'F' ? [a[0], a[1]] : [a[0]]; }
 // no loading before 31 (it starts the 1 July after you turn 31), whatever was entered
+// the loading each adult would pay on hospital cover (also for an extras-only household weighing hospital cover)
+function adultLhcHospital() { return (S.cover === 'C' || S.cover === 'F' ? [0, 1] : [0]).map((i) => (Number(S.ages[i]) > 0 && Number(S.ages[i]) < 31 ? 0 : lhcAssumed(i, true) ?? S.lhc[i])); }
 function adultLhc() { return (S.cover === 'C' || S.cover === 'F' ? [0, 1] : [0]).map((i) => (Number(S.ages[i]) > 0 && Number(S.ages[i]) < 31 ? 0 : lhcAssumed(i) ?? S.lhc[i])); }
 // Someone 31+ who says they have no hospital cover and hasn't given a loading: assume they never held it
 // (2% a year from the 1 July after turning 31, so about 2% x (age - 31)), and say so on the results.
-function lhcAssumed(i) {
-  if (S.want === 'E' || S.lhcSet?.[i] || Number(S.lhc?.[i]) > 0) return null;
+function lhcAssumed(i, forHospital = false) {
+  if ((S.want === 'E' && !forHospital) || S.lhcSet?.[i] || Number(S.lhc?.[i]) > 0) return null;
   const age = Number(S.ages[i]) || 0;
   // no loading before 31, and none for anyone born on or before 1 July 1934 (aged about 92 or more)
   if (age < 32 || age >= 92) return null;
@@ -3068,6 +3133,7 @@ function initForm() {
     const k = e.target.value;
     const u = hp();
     u.cats = e.target.checked ? [...new Set([...(u.cats || []), k])] : (u.cats || []).filter((x) => x !== k);
+    if (k === 'PregnancyBirth') u.preg = e.target.checked;
     // ticking something can raise the level (to the lowest tier that guarantees it); it never lowers the level
     // you picked (Silver Plus guarantees the same categories as Silver, so recalculating would drop it back)
     const need = tierForCats(u.cats), cur = u.minTier || 'Basic';
@@ -3101,6 +3167,7 @@ function initForm() {
   });
   if (S.randomNote) { $('presetNote').textContent = S.randomNote; $('presetNote').hidden = false; }
   $('resetAll').addEventListener('click', resetAll);
+  document.addEventListener('click', (e) => { if (e.target.closest('[data-psychplan]')) { S.psychPlan = S.psychPlan === false; changed(); } });
   $('xpresets').innerHTML = EXTRAS_PRESETS.map((p) => `<button type="button" data-id="${p.id}" title="${esc(p.desc)}">${esc(p.label)}</button>`).join('');
   $('xpresets').addEventListener('click', (e) => { const b = e.target.closest('button'); if (b) applyExtrasPreset(b.dataset.id); });
   renderServices();
@@ -3275,7 +3342,8 @@ async function refreshPickerSet(set) {
   // the policy someone holds can be a different type from the cover being compared (e.g. single parent)
   const cv = curCoverOf(set);
   const [open, closed, other] = await Promise.all([loadState(S.stateCode, cv), loadClosed(S.stateCode, cv), loadOther(S.stateCode, cv)]);
-  const all = open.concat(closed, other).filter((p) => p.cv === cv);
+  // visitor (overseas student / reciprocal) policies aren't resident cover, so they can't be what someone holds
+  const all = open.concat(closed, other).filter((p) => p.cv === cv && !/reciprocal|visitor|overseas (student|visitor)/i.test(p.n));
   // fund/brand dropdowns list every seller with a policy of the right kind
   const sellers = (kinds) => [...new Set(all.filter((p) => kinds.includes(p.k)).map(providerOf))]
     .map((k) => [k, provNameByKey(k, all)]).sort((a, b) => a[1].localeCompare(b[1]));
@@ -3322,6 +3390,18 @@ function servedCategories() {
   return [...new Set(prods.filter((p) => p.e).flatMap((p) => Object.keys(p.e.svc || {})))];
 }
 
+// Extras categories each person's current cover includes (their served waits): you, your partner, then children,
+// who are only on a current policy when it's family or single parent cover.
+function servedByPerson() {
+  const sets = curSets(), sep = partnerSeparate();
+  const cats = (set) => [...new Set(currentProducts(set).filter((p) => p.e).flatMap((p) => Object.keys(p.e.svc || {})))];
+  const mine = cats(sets[0]), theirs = sep ? cats(sets[1]) : mine;
+  const famLike = (i) => ['F', 'SP'].includes(curCoverOf(sets[i]));
+  const kids = famLike(0) ? mine : sep && famLike(1) ? theirs : [];
+  const out = { 0: mine, 1: theirs };
+  people().forEach((_, i) => { if (i >= 2) out[i] = kids; });
+  return out;
+}
 function currentProducts(set = curSets()[0]) {
   const { st, opts } = set;
   const out = [];
@@ -3348,10 +3428,10 @@ function renderPeople() {
 }
 
 function renderServices() {
-  const groups = [...new Set(CATALOGUE.map((c) => c.group))];
+  const groups = [...new Set(CATALOGUE.filter((c) => !c.hidden).map((c) => c.group))];
   const mine = S.usage[S.person] || {};
   $('svcs').innerHTML = groups.map((g) => {
-    const items = CATALOGUE.filter((c) => c.group === g);
+    const items = CATALOGUE.filter((c) => c.group === g && !c.hidden);
     const ct = items.reduce((s, c) => s + (mine[c.id] || 0), 0);
     const open = ct > 0 || g === 'General dental';
     return `<details class="svc-group" ${open ? 'open' : ''}><summary>${esc(g)}<span class="ct">${ct ? ct + ' booked' : ''}</span></summary>${
@@ -3404,6 +3484,7 @@ function applyPreset(id) {
   S.hospUse = structuredClone(p.hospUse || {});
   if (p.hosp?.minTier) for (const i of p.cover === 'C' || p.cover === 'F' ? [0, 1] : [0]) setTier(S.hospUse[i] = S.hospUse[i] || { cats: [], stays: 0, nights: 0 }, p.hosp.minTier);
   for (const [i, u] of Object.entries(S.hospUse)) if (Number(i) < 2 && Number(S.ages[i]) >= 50) u.cats = (u.cats || []).filter((c) => c !== 'PregnancyBirth' && c !== 'AssistedReproductive');
+  for (const u of Object.values(S.hospUse)) if ((u.cats || []).includes('PregnancyBirth')) u.preg = true;
   placePregnancy();
   const preg = Object.keys(S.hospUse).find((k) => (S.hospUse[k].cats || []).includes('PregnancyBirth'));
   S.hperson = preg != null ? Number(preg) : 0;
@@ -3506,7 +3587,8 @@ function rndUsage(ids, addOns) {
   for (const id of ids) for (const [k, n] of Object.entries(EXTRAS_PRESETS.find((x) => x.id === id)?.usage || {})) u[k] = Math.max(u[k] || 0, n);
   if (addOns && RND.chance(0.6)) for (const [k, n] of Object.entries(RND.pick(addOns))) u[k] = (u[k] || 0) + n;
   // nudge counts a little so two people with the same pattern still differ
-  for (const k of Object.keys(u)) if (RND.chance(0.25)) u[k] = Math.max(k.endsWith('_i') || k === 'd881' ? 1 : 0, u[k] + RND.pick([-1, 1]));
+  // one-off purchases (glasses, braces, hearing aids, orthotics) and initial visits never drop to 0
+  for (const k of Object.keys(u)) if (RND.chance(0.25)) u[k] = Math.max(k.endsWith('_i') || ['d881', 'o_sv', 'o_mf', 'hear', 'orth'].includes(k) ? 1 : 0, u[k] + RND.pick([-1, 1]));
   for (const k of Object.keys(u)) if (!u[k]) delete u[k];
   return u;
 }
@@ -3547,6 +3629,7 @@ async function randomScenario(id) {
         if (!hp || (hp.female && S.gender[i] !== 'F') || (hp.male && S.gender[i] !== 'M')) continue;
         if (n === 'pregnancy' && S.ages[i] >= 50) continue;
         u.cats = [...new Set([...u.cats, ...hp.cats])];
+        if (n === 'pregnancy') u.preg = true;
         (hpNames[i] ||= []).push(hp.label);
       }
       const need = tierForCats(u.cats);
@@ -3649,13 +3732,35 @@ function oldBenefitsInto(usage, preferred) {
     if (si === 1 && !sep) return;
     const ep = currentProducts(curSets()[si]).find((p) => p.e && (p.k === 'E' || p.k === 'C'));
     if (!ep) return;
-    const mine = usage.filter((u) => (si === 1 ? u.person === 1 : !(sep && u.person === 1)));
+    // children only count on a current policy that covers them (family or single parent cover)
+    const famLike = (i) => ['F', 'SP'].includes(curCoverOf(curSets()[i]));
+    const kidsHere = famLike(si) && (si === 0 || !famLike(0));
+    const mine = usage.filter((u) => (u.person >= 2 ? kidsHere : si === 1 ? u.person === 1 : !(sep && u.person === 1)));
     if (!mine.length) return;
     const res = extrasBenefits(ep, mine, { fees: S.fees, preferred });
     const by = {};
     for (const l of res.lines) (by[`${l.person}:${l.id}`] ||= []).push(l.benefit);
     for (const u of mine) if (by[`${u.person}:${u.id}`]) u.old = by[`${u.person}:${u.id}`];
   });
+}
+// With a GP mental health treatment plan (on unless switched off), Medicare pays a rebate on up to 10 psychology
+// sessions a year and extras can't pay for those: move them to a 'gap only' line, so extras only pay from session 11.
+function psychOnMedicare(usage) {
+  if (S.psychPlan === false) return;
+  const byP = {};
+  for (const u of usage) if (u.id === 'ps_i' || u.id === 'ps_s') (byP[u.person] ||= []).push(u);
+  for (const [p, us] of Object.entries(byP)) {
+    let left = PSYCH_MEDICARE.sessions, n = 0, gaps = 0;
+    for (const u of us.sort((a, b) => (a.id === 'ps_i' ? -1 : 1))) {
+      const take = Math.min(left, u.count);
+      if (!take) continue;
+      const fee = u.fee ?? S.fees[u.id] ?? CATALOGUE.find((c) => c.id === u.id).fee;
+      gaps += take * Math.max(0, fee - PSYCH_MEDICARE.rebate);
+      u.count -= take; left -= take; n += take;
+    }
+    if (n) usage.push({ person: Number(p), id: 'ps_mc', count: n, fee: Math.round(gaps / n) });
+  }
+  for (let i = usage.length - 1; i >= 0; i--) if (!usage[i].count) usage.splice(i, 1);
 }
 function query(preferred) {
   const usage = [];
@@ -3665,13 +3770,15 @@ function query(preferred) {
     if (Number(p) >= kidStart() && !kidsCovered()) continue; // children aren't on a single/couple policy: costed separately
     for (const [id, count] of Object.entries(items)) usage.push({ person: Number(p), id, count, fee: S.fees[id] });
   }
+  psychOnMedicare(usage);
   oldBenefitsInto(usage, preferred);
   const q = {
     want: S.want, preferred, fees: S.fees, usage, mixFunds: S.mixFunds !== false,
-    firstYear: false, year2: true, served: servedCategories(),
+    firstYear: false, year2: true, served: servedCategories(), servedBy: servedByPerson(),
     mls: S.want === 'E' ? mlsCost({ income: S.income, cover: S.cover, dependants: S.cover === 'F' || S.cover === 'SP' ? S.kids : 0 }) : 0,
     // surcharge on a setup with no hospital cover at all (e.g. the cover held now), tested on the whole household
     mlsIfNone: mlsCost({ income: S.income, cover: S.cover, dependants: hasKids() ? S.kids : 0 }),
+    ambOnlyNet: ambOnlyBest?.prem?.net,
     state: S.stateCode, ambulance: { required: !!S.amb?.need, trips: S.amb?.trips || 0, cost: S.amb?.cost !== '' && S.amb?.cost != null ? Number(S.amb.cost) : undefined },
     household: { cover: effCover(), income: S.income, adultAges: adultAges(), dependants: kidsCovered() ? S.kids : 0, lhc: adultLhc(), abdKept: adultAbd() },
     hospital: hospitalQuery(),
@@ -3754,6 +3861,7 @@ async function compute() {
   const up = months ? await upgradeTables(onlyMajor) : null;
   const must = mustCover();
   mustShown = must;
+  curAmbNow = [...currentProducts(curSets()[0]), ...(partnerSeparate() ? currentProducts(curSets()[1]) : [])].some((p) => p.amb === 'EmergencyOnly' || p.amb === 'EmergencyAndNonEmergency');
   const rankAll = (q) => {
     const l = splitOn ? rank(data, q).concat(...sps.map((x) => rankSplit(singles, q, x))) : rank(data, q);
     if (months) for (const r of l) applyBabyUpgrade(r, months, up);
@@ -3761,8 +3869,16 @@ async function compute() {
     // big-ticket services entered (braces, crowns, hearing aids): only options that pay for them, if any do
     const ok = must.length ? l.filter((r) => must.every((id) => (r.extras?.lines || []).some((x) => x.id === id && x.covered))) : l;
     // like for like also keeps extras cover for anyone who has extras now
-    const kx = S.want === 'HE' && keepFloor() ? [...curExtrasWho()] : [];
-    const ok2 = kx.length ? ok.filter((r) => { const w = optExtrasWho(r); return kx.every((i) => w.has(i)); }) : ok;
+    const kf = keepFloor();
+    const kx = S.want === 'HE' && kf ? [...curExtrasWho()] : [];
+    const keepAmb = kf && curAmbNow && !AMBULANCE.stateCovered.includes(S.stateCode);
+    const ok2 = kx.length || keepAmb ? ok.filter((r) => {
+      const w = optExtrasWho(r);
+      if (!kx.every((i) => w.has(i))) return false;
+      // every service they use that the current extras pays for must still be covered
+      if (kx.length && (r.extras?.lines || []).some((l) => Number(l.old) > 0 && !l.covered)) return false;
+      return !keepAmb || hasAmbOf(r) || !!r.ambAddOn;
+    }) : ok;
     return (ok2.length ? ok2 : ok.length ? ok : l).sort((a, b) => a.total - b.total);
   };
   const any = rankAll(query(false));
@@ -3835,6 +3951,7 @@ async function compute() {
     });
     whatIf.best = best;
   }
+  ambOnlyBest = cheapestAmbulanceOnly(data, query(false).household);
   const current = evaluateCurrent(true);
   if (current && months) {
     applyBabyUpgrade(current.r, months, up);
@@ -3925,6 +4042,10 @@ function evaluateCurrent() {
       usage: q.usage.filter((u) => persons.includes(u.person)),
       hospital: { ...q.hospital, stays: (q.hospital.stays || []).filter((st) => persons.includes(st.person)) },
       household: { ...h, adultAges: [h.adultAges[i]], lhc: [h.lhc?.[i] || 0], abdKept: [h.abdKept?.[i]], rebateTier: famTier },
+      // an expected ambulance trip is counted once for the household (on your policy); an ambulance-only
+      // policy for one person costs about half a couples one
+      ambulance: { ...(q.ambulance || {}), trips: i === 0 ? (q.ambulance?.trips || 0) : 0 },
+      ambOnlyNet: q.ambOnlyNet != null ? Math.round(q.ambOnlyNet / 2) : undefined,
       // a partner without hospital cover pays the Medicare levy surcharge on their own income: we only know the combined
       // income, so assume half each
       mlsIfNone: (q.mlsIfNone || 0) / 2, mlsEst: true,
@@ -3963,7 +4084,10 @@ function evaluateCurrent() {
       r.total = Math.round((r.total - (r.mls || 0) + q.mls) * 100) / 100;
       r.mls = q.mls;
     }
-    if (q.want !== 'E' && (a.noHospital || b.noHospital) && q.mlsIfNone) {
+    // children on neither single policy have no hospital cover either, so the family pays the surcharge
+    const kidsOut = hasKids() && !mineKids.length && !theirKids.length;
+    if (kidsOut) r.kidsUncovered = true;
+    if (q.want !== 'E' && (a.noHospital || b.noHospital || kidsOut) && q.mlsIfNone) {
       r.total = Math.round((r.total - (r.mls || 0) + q.mlsIfNone) * 100) / 100;
       r.mls = q.mlsIfNone;
       r.mlsEst = false;
@@ -3997,6 +4121,7 @@ let nearSkipped = []; // near-copies of the cheapest left out of the cards
 const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
 let lastRender = [];
 let curNow = null; // what the current cover costs, for savings on each card
+let curAmbNow = false; // the cover held now includes ambulance (keep-at-least-this-cover keeps it)
 // What's still missing from a started-but-unfinished existing cover (empty when complete or not started).
 function curTodo() {
   const sets = curSets();
@@ -4020,6 +4145,7 @@ let noCoverNow = false;
 // current cover has no hospital policy at all, but hospital cover is wanted (e.g. extras-only cover today)
 const noHospNow = () => S.want !== 'E' && !!curNow && curNow.products.length > 0 && !curNow.products.some((p) => p.k !== 'E');
 let curMissNow = []; // ticked hospital categories the cover held now doesn't include // the household has no cover at all (savings are against having none)
+let ambOnlyBest = null; // the cheapest stand-alone ambulance policy for this household (costs ambulance cover when none is held)
 let mlsAlt = null; // extras only at a surcharge income: the cheapest hospital policy that would end the surcharge
 function render(list, anyMap, netMap, data, current) {
   mlsAlt = null;
@@ -4047,6 +4173,7 @@ function render(list, anyMap, netMap, data, current) {
   recPick = list.length ? pickRecommended(list) : null;
   upPick = current && current.r.products.length && list.length ? pickUpgrade(list, current.r, [list[0], recPick?.r].filter(Boolean)) : null;
 
+  if (current?.r?.kidsUncovered) parts.push(`<div class="notice warn"><b>Your ${S.kids === 1 ? 'child isn\'t' : 'children aren\'t'} covered now.</b> Single policies only cover the person who holds them, so ${S.kids === 1 ? 'your child has' : 'your children have'} no hospital or extras cover today${(current.r.mls || 0) > 0 ? ` and the household pays the Medicare levy surcharge (${fmt(current.r.mls)} a year, counted in what you pay now)` : ''}. A family or single parent policy covers them; their waiting periods start when they join.</div>`);
   // Medicare levy surcharge when children have no hospital cover: to avoid it, you AND all your dependants
   // need appropriate hospital cover. Tested on family income (with the children counted).
   if (S.want !== 'E' && hasKids() && !kidsCovered()) {
@@ -4060,14 +4187,31 @@ function render(list, anyMap, netMap, data, current) {
   if (tier > 0 && S.want === 'E') {
     const mls = mlsCost(h);
     const fam = h.cover !== 'S';
-    const cheapestH = rank(data, { ...q, want: 'H', hospital: { minTier: 'Basic', maxExcess: fam ? REBATE.mlsMaxExcess.family : REBATE.mlsMaxExcess.single, cats: [], admissions: 0 } })[0];
-    if (cheapestH) mlsAlt = { prem: cheapestH.premium.net, label: policyLabel(cheapestH.products[0]) };
-    parts.push(`<div class="notice warn">At your income, having no hospital cover means a Medicare levy surcharge of about <b>${fmt(mls)}</b> a year (${REBATE.mlsRates[tier]}% of income).${
-      cheapestH ? ` The cheapest hospital policy that avoids it is ${esc(policyLabel(cheapestH.products[0]))} at <b>${fmt(cheapestH.premium.net)}</b> a year after rebate.` : ''}</div>`);
+    // priced with the Lifetime Health Cover loading they'd pay on hospital cover (assumed when not entered)
+    const lhcH = adultLhcHospital();
+    const cheapestH = rank(data, { ...q, want: 'H', household: { ...q.household, lhc: lhcH }, hospital: { minTier: 'Basic', maxExcess: fam ? REBATE.mlsMaxExcess.family : REBATE.mlsMaxExcess.single, cats: [], admissions: 0 } })[0];
+    const lhcMax = Math.max(0, ...lhcH);
+    if (cheapestH) mlsAlt = { prem: cheapestH.premium.net, label: policyLabel(cheapestH.products[0]), lhc: lhcMax };
+    parts.push(`<div class="notice warn">At your income, having no hospital cover means a Medicare levy surcharge of about <b>${fmt(mls)}</b> a year (${REBATE.mlsRates[tier]}% of income). Any hospital policy with an excess up to ${fmt(fam ? REBATE.mlsMaxExcess.family : REBATE.mlsMaxExcess.single)} ends it.${
+      cheapestH ? ` The cheapest is ${esc(policyLabel(cheapestH.products[0]))} at <b>${fmt(cheapestH.premium.net)}</b> a year after rebate${lhcMax ? `, including a ${lhcMax}% Lifetime Health Cover loading` : ''}.` : ''}</div>`);
   }
   {
     const as = [0, 1].map((i) => ({ i, l: i < adultAges().length ? lhcAssumed(i) : null })).filter((x) => x.l);
-    if (as.length && S.want !== 'E') parts.push(`<div class="notice">Hospital premiums include an assumed <b>Lifetime Health Cover loading</b> of ${as.map((x) => `${x.l}% for ${x.i ? 'your partner' : 'you'} (age ${S.ages[x.i]})`).join(' and ')}, as ${[S.cur, S.curP].some((st) => st?.noH) ? "there's no hospital cover now" : 'no current hospital cover was entered'} (based on your age on the last 1 July, so it could be 2% more). If you've held hospital cover before, enter the actual loading under <b>Who's covered</b>.</div>`);
+    if (as.length && S.want !== 'E') parts.push(`<div class="notice">Hospital premiums include an assumed <b>Lifetime Health Cover loading</b> of ${as.map((x) => `${x.l}% for ${x.i ? 'your partner' : 'you'} (age ${S.ages[x.i]})`).join(' and ')}, as ${[S.cur, S.curP].some((st) => st?.noH) ? "there's no hospital cover now" : 'no current hospital cover was entered'} (based on your age on the last 1 July${as.every((x) => x.l >= 70) ? ', the 70% maximum' : ', so it could be 2% more'}; every further year without cover adds another 2%). If you've held hospital cover before, enter the actual loading under <b>Who's covered</b>.</div>`);
+  }
+  // top income band picked without a figure: the surcharge is worked out at the bottom of the band
+  {
+    const bands = incomeBands();
+    if (!S.incomeTyped && S.income === bands[3]?.[1] && (q.mlsIfNone > 0 || q.mls > 0)) parts.push(`<div class="notice">Income "${esc(bands[3][0])}": the Medicare levy surcharge is worked out at ${fmt(S.income)}, the bottom of that band. It's 1.5% of income, so type your income under Who's covered for the exact figure.</div>`);
+  }
+  // under-30s: the age-based discount is in the hospital prices; say so and how long it lasts
+  if (S.want !== 'E') {
+    const yng = adultAges().map((a, i) => ({ a: Number(a), i })).filter((x) => x.a >= 18 && x.a < 30);
+    if (yng.length) {
+      const pct = (a) => Math.min(10, 2 * (30 - Math.max(25, a)));
+      const curH = currentHospitals().length;
+      parts.push(`<div class="notice">Hospital prices include the <b>age-based discount</b> for under-30s: ${yng.map((x) => `${pct(x.a)}% for ${x.i ? 'your partner' : 'you'}`).join(' and ')}. ${curH ? 'If you joined younger you may already hold a bigger discount, which a new policy keeps when you switch.' : 'Taking hospital cover now locks it in until 41, then it falls by 2% a year.'} Not every policy offers it; those that don't are marked.</div>`);
+    }
   }
   if (S.want !== 'E' && q.hospital?.assumedStay) {
     parts.push(`<div class="notice">You've added a hospital stay without saying what it's for, so that person's cover is limited to <b>Bronze or better</b>, the level that pays for common admissions. Tick the treatment under Hospital: what you need covered for a sharper answer.</div>`);
@@ -4137,12 +4281,12 @@ function render(list, anyMap, netMap, data, current) {
     const baseNow = c.total;
     const yh = np0 ? null : yearsHead(c, list[0]);
     parts.push(`<section class="panel nowbox">
-      ${save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to ${yh ? yh.head(saveInfo(c, list[0], np0)) : `<span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in Year 1' : 'a year'} ${saveInfo(c, list[0], np0)}</span>`}${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${rankY1 && !np0 ? (() => {
+      ${save > 0.5 && save < 20 && !yh ? `<div class="bigsave same"><div>About what you pay now <span class="sm bsnote">Option #1 is ${fmt(save)} a year cheaper${c.products.length ? ', so there\'s little reason to switch on price alone' : ''}.</span></div></div>` : save > 0.5 ? `<div class="bigsave"><div>${c.products.length ? 'Switch and save' : 'Take out cover and save'} up to ${yh ? yh.head(saveInfo(c, list[0], np0)) : `<span class="nw"><b>${fmt(save)}</b> ${rankY1 ? 'in Year 1' : 'a year'} ${saveInfo(c, list[0], np0)}</span>`}${!c.products.length && c.mls > 0 && !(list[0].mls > 0) && c.mls - (list[0].mls || 0) >= save * 0.5 ? '<span class="sm bsnote">mostly the Medicare levy surcharge you avoid</span>' : ''}${rankY1 && !np0 ? (() => {
         const own = yr2(list[0]) ?? list[0].total, out = [];
         if (!yh && Math.abs(own - list[0].total) >= 1) out.push(`From Year 2: this option ${c.total - own >= 1 ? `saves ${fmt(c.total - own)} a year` : `costs ${fmt(own - c.total)} a year more than ${c.products.length ? 'now' : 'having no cover'}`}.`);
         if (y2Top != null && own - y2Top >= 1) out.push(`From Year 2, a different option is cheapest: ${c.total - y2Top >= 1 ? `it saves ${fmt(c.total - y2Top)} a year` : `it costs ${fmt(y2Top - c.total)} a year more`}, but costs more in Year 1. Choose “From Year 2” below to see it.`);
         return out.length ? `<span class="sm bsnote">${out.join(' ')}</span>` : '';
-      })() : ''}${yh ? yh.tiles : ''}</div>${saveMeter(save, baseNow, yh ? (rankY1 ? ' in Year 1' : ' from Year 2') : '')}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(listCats(curMissNow, 99))} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 && !netCoverCase() ? `<div class="bigsave same costs"><div>In Year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From Year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length && S.want !== 'E' ? `<div class="bigsave same"><div>Cover for a net ${fmt(list[0].total - c.total)} ${rankY1 ? 'in Year 1' : 'a year'} <span class="sm bsnote">${netCoverWhy(c, list[0])}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`)}`}
+      })() : ''}${yh ? yh.tiles : ''}</div>${saveMeter(save, baseNow, yh ? (rankY1 ? ' in Year 1' : ' from Year 2') : '')}</div>` : `${!np0 && noHospNow() ? `<div class="bigsave same costs"><div>Your current cover has no hospital cover <span>${list[0].total - c.total >= 1 ? `Adding it costs ${fmt(list[0].total - c.total)} a year more than you pay now with Option #1, the cheapest way to add it.` : 'Option #1 adds it for about what you pay now.'}</span></div></div>` : !np0 && curMissNow.length ? `<div class="bigsave same costs"><div>Your current cover doesn't include ${esc(catsSummary(curMissNow))}${(() => { const r = curMissNow.filter((c) => currentHospitals().some((x) => x.p.h.cats[c] === 'R')); return r.length ? ` (${r.length === curMissNow.length ? 'it covers them' : `it covers ${listCats(r)}`} only in a public hospital)` : ''; })()} <span>${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : np0 ? `<div class="bigsave same costs"><div>Covering ${np0.ni === 1 ? 'your partner' : 'you'}${c.parts.kidsNew && hasKids() ? ` and your ${S.kids === 1 ? 'child' : 'children'}` : ''} ${list[0].total - c.total >= 1 ? 'costs more than you pay now' : 'costs about the same as you pay now'} <span>${list[0].total - c.total >= 1 ? `${fmt(list[0].total - c.total)} a year more with Option #1, the cheapest way to do it` : 'Option #1 is the cheapest way to do it'}${np0.yourSave >= 1 ? `, even after saving ${fmt(np0.yourSave)} on your own cover` : ''}</span></div></div>` : (rankY1 && !netCoverCase() ? `<div class="bigsave same costs"><div>In Year 1, staying as you are costs least <span>Waiting periods mean a new policy would pay little for the services you entered this year. ${yr2(list[0]) != null && c.total - yr2(list[0]) >= 1 ? `From Year 2, Option #1 would save ${fmt(c.total - yr2(list[0]))} a year.` : ''}</span></div></div>` : !c.products.length && S.want !== 'E' ? `<div class="bigsave same"><div>Cover for a net ${fmt(list[0].total - c.total)} ${rankY1 ? 'in Year 1' : 'a year'} <span class="sm bsnote">${netCoverWhy(c, list[0])}</span></div></div>` : !c.products.length ? `<div class="bigsave same costs"><div>For what you use, going without cover costs less <span>Option #1 is ${fmt(list[0].total - c.total)} a year more than paying for your services yourself${c.mls ? ` (and the ${fmt(c.mls)} surcharge)` : ''}. ${S.want !== 'E' ? `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` : 'Extras pay off only if you use more services.'}</span></div></div>` : `${curFails().length ? `<div class="bigsave same costs"><div>Your current cover doesn't meet what you asked for <span>It has ${esc(curFails().join(' and '))}. ${list[0].total - c.total >= 1 ? `Option #1 is the cheapest that does, ${fmt(list[0].total - c.total)} a year more than you pay now.` : 'Option #1 is the cheapest that does.'}</span></div></div>` : `<div class="bigsave same"><div>You're already on the best deal for what you use</div>${saveMeter(0, baseNow)}</div>`}`)}`}
       <div class="nowhead nowafter"><div class="nowtot"><span class="nowlbl">Total cash you would outlay for the year ${c.products.length ? 'under your existing' : 'with no'}</span> <span class="nowfig"><span class="nowlbl">cover</span> <b class="nowbig">${fmt(c.total)}</b>${outlayInfo(c)}</span></div></div>
       <p class="nowsave">${!c.products.length || np0 || curMissNow.length || c.products.some((p) => p.closed || p.corp || p.restricted) ? '' : (pos <= 1 ? 'Nothing costs less for what you use.' : `${(pos - 1).toLocaleString('en-AU')} of ${list.length.toLocaleString('en-AU')} ${S.keep?.some(Boolean) || keepPending() ? 'options with cover at least as good as yours' : 'options'} cost less for what you use.`)}${likeForLike(c, list)}</p>
     </section>`);
@@ -4183,7 +4327,7 @@ function render(list, anyMap, netMap, data, current) {
   const warns = top.map((r) => (r.split ? splitWarning(r) : ''));
   sharedWarn = warns.length > 1 && warns.every((w) => w && w === warns[0]) ? warns[0] : '';
   if (sharedWarn) parts.push(`<div class="notice">${sharedWarn.replace(/^<p[^>]*>|<\/p>$/g, '')}</div>`);
-  const roleWords = { cheap: 'the cheapest', rec: 'our best-value pick', up: 'an upgrade that still costs less than you pay now', alt1: 'the runner-up (the cheapest genuinely different option)', alt2: 'the 2nd runner-up' };
+  const roleWords = { cheap: 'the cheapest', rec: 'our best-value pick', up: 'an upgrade that still costs less than you pay now', alt1: top.some((t) => cardRole.get(t) === 'rec' && list.indexOf(t) < list.indexOf(top.find((x) => cardRole.get(x) === 'alt1'))) ? 'the runner-up (another genuinely different option)' : 'the runner-up (the cheapest genuinely different option)', alt2: 'the 2nd runner-up' };
   const roles = top.map((r) => roleWords[cardRole.get(r)]).filter(Boolean);
   const rolesTxt = roles.length > 1 ? `${roles.slice(0, -1).join(', ')} and ${roles[roles.length - 1]}` : roles[0] || '';
   parts.push(`<div class="tophead"><h2>Your top ${top.length} option${top.length === 1 ? '' : 's'}</h2><p class="toproles">${rolesTxt ? `${cap1(rolesTxt)}.` : ''}</p>${rankY1Offered ? `<div class="rankon"><span>${rankY1 ? `<b>Ranked on your first year:</b> waiting periods mean some of the services you entered won’t be paid by a new policy this year.${(() => { const no = S.want !== 'H' ? bigItems().filter((id) => bigStatus(list[0], id)?.none) : []; return no.length ? ` So the cheapest options this year don’t cover ${esc(no.map(bigName).join(' or ').toLowerCase())} at all. Choose <b>From Year 2</b> to rank the policies that pay for ${no.length === 1 ? 'it' : 'them'} once the wait is served.` : ''; })()}` : `<b>Ranked from Year 2:</b> as if waiting periods were already served.${mustShown.length ? ` ${mustShown.every((id) => servedCategories().includes(CATALOGUE.find((c) => c.id === id)?.cat)) ? `Your current cover already pays for ${esc(mustShown.map(bigName).join(' and ').toLowerCase())}: a new policy pays that much straight away, and only the part above it waits.` : `No new policy pays for ${esc(mustShown.map(bigName).join(' or ').toLowerCase())} until its waiting period is served, so Year 1 costs more than later years whichever you choose: each card shows how much.`}` : ''}`}</span><span class="seg" role="group" aria-label="Rank on"><button type="button" data-rankon="y1" aria-pressed="${rankY1}">Year 1</button><button type="button" data-rankon="ongoing" aria-pressed="${!rankY1}">From Year 2</button></span></div>` : ''}<p>From ${list.length.toLocaleString('en-AU')} ${esc(COVER_LABEL[effCover()]?.toLowerCase() || '')} options in ${esc(S.stateCode)}${mustShown.length && list.some((r) => mustShown.every((id) => (r.extras?.lines || []).some((x) => x.id === id && x.covered))) ? ` that cover ${esc(mustShown.map(bigName).join(' and ').toLowerCase())}` : ''}, ranked by what you'd really pay in a year: premiums after your rebate plus your share of the services you use.${current ? (noCoverNow ? ' Savings are against having no cover.' : ' Savings are against your existing cover.') : ''}</p></div>`);
@@ -4342,7 +4486,7 @@ function card(r, i, anyMap, netMap, rowsShown = {}) {
   const waive = (p, w) => headlineExcess(p) > 0 && (p.xs?.waivers || []).includes(w);
   // excess waivers: one short line instead of a label each
   const wv = [];
-  for (const [w, label, show] of [['DaySurgery', 'same-day surgery', true], ['Dependents', 'children', kidsCovered()]]) {
+  for (const [w, label, show] of [['DaySurgery', 'same-day surgery', true], ['Dependents', 'children', kidsCovered()], ['Accidents', 'accidents', true]]) {
     if (!show) continue;
     // children only matter on the policy they're on (single parent / family cover)
     const rel = w === 'Dependents' && r.split ? parts.filter((x) => ['SP', 'F'].includes(x.p.cv)) : parts;
@@ -4355,14 +4499,26 @@ function card(r, i, anyMap, netMap, rowsShown = {}) {
   // the hospital needs ticked (beyond the level's own list): every ranked option covers them, so say so
   {
     const need = new Set(Object.entries(S.hospUse || {}).flatMap(([k, u]) => (u.cats || []).filter((c) => !(meta?.tierMinimums?.[u.minTier || 'Basic'] || []).includes(c) && catFor(c, Number(k)))));
-    if (S.want !== 'E' && need.size) lab.waive.push(`<span class="pnote">✓ Covers the ${need.size} hospital need${need.size === 1 ? '' : 's'} you ticked</span>`);
+    if (S.want !== 'E' && need.size) lab.waive.push(`<span class="pnote">✓ Covers every hospital need ticked</span>`);
   }
   for (const x of parts) {
     const cp = x.p.cp;
     if (cp && cp.type && cp.type !== 'None' && (cp.Private || cp.Shared)) lab.waive.push(`<span class="pnote muted">Daily co-payment: ${fmt(cp.Private || cp.Shared)} a day in hospital${cp.PrivateMax || cp.AnnualMax ? `, up to ${fmt(cp.AnnualMax || cp.PrivateMax)}` : ''}${r.split ? ` (${x.i === 0 ? 'your' : "your partner's"} policy)` : ''}</span>`);
   }
+  // services they entered that this option's extras don't pay for at all
+  if (S.want !== 'H' && ex && r.products.some((p) => p.e)) {
+    const short = (id) => (CATALOGUE.find((c) => c.id === id)?.label || id).split(' – ')[0].replace(/ \(.*$/, '');
+    const nc = [...new Set(ex.lines.filter((l) => !l.covered && l.id !== 'ps_mc').map((l) => short(l.id)))];
+    if (nc.length) lab.waive.push(`<span class="pnote muted">Doesn't pay for: ${esc(nc.slice(0, 4).join(', ').toLowerCase())}${nc.length > 4 ? ` and ${nc.length - 4} more` : ''}</span>`);
+  }
+  // under-30s lose the age-based discount on a policy that doesn't offer it
+  for (const x of parts) {
+    const ages = r.split ? [adultAges()[x.i]] : adultAges();
+    if (x.p.h?.ageDiscount === false && ages.some((a) => Number(a) >= 18 && Number(a) < 30)) lab.waive.push(`<span class="pnote muted">No under-30 age discount on ${r.split ? (x.i === 0 ? 'your' : "your partner's") : 'this'} policy</span>`);
+  }
   if (ex?.estimated) lab.waive.push(`<span class="pnote muted">Some benefits estimated <span class="info" tabindex="0" role="button" aria-label="About estimated benefits">i<span class="tip" role="tooltip">The fund doesn't publish a benefit for ${esc(listCats([...new Set((ex.lines || []).filter((l) => l.basis === 'estimated').map((l) => (l.label || '').split(/[,(]/)[0].trim()))].slice(0, 3), 3) || 'some services')}, so it's estimated from the fund's other published benefits in the same category.</span></span></span>`);
-  if (!AMBULANCE.stateCovered.includes(S.stateCode) && r.ambulanceCovered === false) pills.push(`<span class="pill warn">No ambulance cover</span>`);
+  // (when the current cover has ambulance, the 'Less cover than now' list already says so)
+  if (!AMBULANCE.stateCovered.includes(S.stateCode) && r.ambulanceCovered === false && !(curNow && hasAmbOf(curNow))) pills.push(`<span class="pill warn">No ambulance cover${r.split && r.ambulanceBy ? ` for ${r.ambulanceBy[0] ? 'your partner' : r.ambulanceBy[1] ? 'you' : 'either of you'}` : ''}</span>`);
   // monthly premium after rebate, split by policy where there are two
   const month = (x) => fmtc(x / 12);
   const monthly = r.split
@@ -4543,12 +4699,24 @@ function curMissing() {
   }
   return [...miss];
 }
+// Ways the cover held now falls short of what was asked for, besides hospital categories: an excess above the
+// limit set, or no extras for someone who uses services when hospital and extras were asked for.
+function curFails() {
+  const out = [];
+  if (!curNow || !curNow.products.length) return out;
+  if (S.want !== 'E') for (const x of currentHospitals()) for (const i of x.persons || adultAges().map((_, j) => j)) {
+    const lim = popt(i, 'maxExcess');
+    if (stayCapOf(x.p) > lim) { out.push(`a ${fmt(stayCapOf(x.p))} excess${adultAges().length > 1 ? ` for ${i ? 'your partner' : 'you'}` : ''} (your limit is ${lim ? fmt(lim) : 'no excess'})`); break; }
+  }
+  if (S.want === 'HE') { const has = curExtrasWho(); adultAges().forEach((_, i) => { if (usesExtras(i) && !has.has(i)) out.push(`no extras for ${i ? 'your partner' : 'you'}`); }); }
+  return [...new Set(out)];
+}
 function likeForLike(cur, list) {
   if (S.want === 'E' || !currentHospitals().length) return '';
   const floor = keepFloor(true);
   if (!floor) return '';
   if (S.keep?.some(Boolean)) {
-    return ` <br>Showing hospital cover at least as good as yours: every option covers the <b>${floor.cats.length} categories</b> your policy covers. <button type="button" class="linkbtn" id="showAll">Show cheaper options with less cover</button>`;
+    return ` <br>Showing hospital cover at least as good as yours: ${floor.cats.length ? `every option covers the <b>${floor.cats.length} categor${floor.cats.length === 1 ? 'y' : 'ies'}</b> your policy covers` : 'every option is at least your current level'}. <button type="button" class="linkbtn" id="showAll">Show cheaper options with less cover</button>`;
   }
   const drops = list.slice(0, 3).some((r) => coverDrops(r).length);
   return '';
@@ -4570,17 +4738,19 @@ function keepFloor(always = false) {
   const cur = currentHospitals();
   if (!cur.length || S.want === 'E') return null;
   const covered = (p) => Object.entries(p.h.cats).filter(([, v]) => v === 'Y').map(([k]) => k);
-  const byPerson = {}, tierBy = {};
+  const byPerson = {}, tierBy = {}, xsBy = {};
   const adults = S.cover === 'C' || S.cover === 'F' ? [0, 1] : [0];
   for (const x of cur) for (const i of (x.persons || adults).filter((j) => kept.includes(j))) {
     byPerson[i] = [...new Set([...(byPerson[i] || []), ...covered(x.p)])];
     if (!tierBy[i] || tierRank(x.p.h.tier) > tierRank(tierBy[i])) tierBy[i] = x.p.h.tier;
+    xsBy[i] = Math.min(xsBy[i] ?? Infinity, headlineExcess(x.p) + coPayCap(x.p));
   }
   const tiers = Object.values(tierBy);
   if (!tiers.length) return null;
   const tier = tiers.sort((a, b) => tierRank(b) - tierRank(a))[0];
   const cats = [...new Set(Object.values(byPerson).flat())];
-  return { tier, cats, byPerson, tierBy };
+  const xs = Object.values(xsBy);
+  return { tier, cats, byPerson, tierBy, xsBy, maxExcess: xs.length ? Math.min(...xs) : null };
 }
 
 // Categories the current cover includes that an option would not fully cover.
@@ -4975,6 +5145,8 @@ function splitWarning(r) {
 function plansPregnancy(i) {
   const u = S.hospUse?.[i];
   if (!(u?.cats || []).includes('PregnancyBirth')) return false;
+  // ticked (or chosen with a quick fill) for this person: planned, whatever the tier
+  if (u.preg) return true;
   return !(meta?.tierMinimums?.[u.minTier || 'Basic'] || []).includes('PregnancyBirth');
 }
 
@@ -5077,12 +5249,13 @@ function splitBlocks(r) {
     return `<div class="sblock${w.tone ? ` tone-${w.tone}` : w.note ? ' needs' : ''}">
       <div class="sb-who">${w.title}${x.products.some((p) => p.cv === 'SP') ? ` <b class="kidtag">+${S.kids} ${S.kids === 1 ? 'child' : 'children'}</b>` : ''}</div>
       <div class="sb-name">${x.products.length ? policiesHtml(x.products) : 'No cover'}</div>
-      <div class="sb-cost"><b>${fmtc(x.premium.net / 12)}</b>/mth${rebateNote(x)}<br>${S.want === 'HE' && x.products.length && !x.products.some((p) => p.k !== 'H') ? `No extras: ${usesExtras(i) ? `cheaper for ${i === 0 ? 'you' : 'your partner'} to pay for services directly` : `no services entered for ${i === 0 ? 'you' : 'your partner'}`}<br>` : ''}${!x.products.length ? 'Services paid in full' : x.products.some((p) => p.cv === 'SP') ? `Covers ${i === 0 ? 'you' : 'your partner'} + ${S.kids === 1 ? 'child' : 'children'}` : ''}</div>
+      <div class="sb-cost"><b>${fmtc(x.premium.net / 12)}</b>/mth${rebateNote(x)}<br>${S.want === 'HE' && x.products.length && !x.products.some((p) => p.k !== 'H') ? r.currentSplit ? 'No extras<br>' : `No extras: ${usesExtras(i) ? `cheaper for ${i === 0 ? 'you' : 'your partner'} to pay for services directly` : `no services entered for ${i === 0 ? 'you' : 'your partner'}`}<br>` : ''}${!x.products.length ? 'Services paid in full' : x.products.some((p) => p.cv === 'SP') ? `Covers ${i === 0 ? 'you' : 'your partner'} + ${S.kids === 1 ? 'child' : 'children'}` : ''}</div>
     </div>`;
   }).join('')}${ambLine(r)}</div>`;
 }
 // the stand-alone ambulance policy added when the hospital cover has none
 function ambLine(r) {
+  if (r.split) return r.split.map((x, i) => (x.ambAddOn?.net ? `<span class="ambline">+ ambulance-only policy for ${i === 0 ? 'you' : 'your partner'}: ${esc(provName(x.ambAddOn.p))} ${esc(x.ambAddOn.p.n)}, ${fmt(x.ambAddOn.net)} a year</span>` : '')).join('');
   return r.ambAddOn?.net ? `<span class="ambline">+ ambulance-only policy: ${esc(provName(r.ambAddOn.p))} ${esc(r.ambAddOn.p.n)}, ${fmt(r.ambAddOn.net)} a year</span>` : '';
 }
 
@@ -5145,6 +5318,11 @@ function hospitalQuery() {
   // Like for like: no lower tier than current cover, and everything it covers (per person for separate policies)
   const floor = keepFloor();
   if (floor) {
+    // keeping cover also means no higher excess than now (per person for separate policies)
+    if (floor.maxExcess != null) {
+      q.maxExcess = Math.min(q.maxExcess, floor.maxExcess);
+      for (const [i, x] of Object.entries(floor.xsBy || {})) if (q.byPerson[i]) q.byPerson[i].maxExcess = Math.min(q.byPerson[i].maxExcess ?? Infinity, x);
+    }
     if (tierRank(floor.tier) > tierRank(q.minTier)) q.minTier = floor.tier;
     q.cats = [...new Set([...(q.cats || []), ...floor.cats])];
     for (const [i, cats] of Object.entries(floor.byPerson)) {
@@ -5229,6 +5407,7 @@ function placePregnancy() {
     u.cats = u.cats.filter((c) => c !== 'PregnancyBirth');
     const t = (S.hospUse[to] = S.hospUse[to] || { cats: [], stays: 0, nights: 0 });
     t.cats = [...new Set([...(t.cats || []), 'PregnancyBirth'])];
+    if (u.preg) { t.preg = true; u.preg = false; }
     notify(`Pregnancy cover moved to ${to === 0 ? 'you' : 'your partner'}, as the female partner.`);
   }
   syncHosp();
@@ -5262,7 +5441,26 @@ function coverGains(r) {
 // "you", "your partner" or "you both" for a list of person indexes
 function whoWord(ids) {
   if (people().length < 2) return '';
+  if (ids.some((i) => i >= 2)) return ids.some((i) => i < 2) ? 'your family' : S.kids === 1 ? 'your child' : 'your children';
   return ids.length > 1 ? 'you both' : ids[0] === 0 ? 'you' : 'your partner';
+}
+// Who loses something an option drops against the cover held now: hospital categories per person, extras by the
+// people who use (or hold) them, ambulance for everyone it covered.
+function lossPeople(r) {
+  const out = new Set();
+  const d = dropsBy(r);
+  for (const [i, cs] of Object.entries(d)) if ((cs || []).length) out.add(Number(i));
+  if (S.want !== 'H' && curNow?.products.length) {
+    const now = curExtrasWho(), then = optExtrasWho(r);
+    for (const i of now) if (!then.has(i)) out.add(i);
+    const xl = coverDelta(r, curNow).xLost.map((x) => x.toLowerCase());
+    if (xl.length) {
+      const users = Object.entries(S.usage || {}).filter(([, u]) => Object.entries(u).some(([id, n]) => n > 0 && xl.some((x) => [].concat(CATALOGUE.find((c) => c.id === id)?.cat || []).some((ct) => catName(ct).includes(x)) || (CATALOGUE.find((c) => c.id === id)?.group || '').toLowerCase().includes(x)))).map(([k]) => Number(k));
+      (users.length ? users : [...now]).forEach((i) => out.add(i));
+    }
+  }
+  if (!AMBULANCE.stateCovered.includes(S.stateCode) && curNow && hasAmbOf(curNow) && !hasAmbOf(r)) adultAges().forEach((_, i) => out.add(i));
+  return [...out].filter((i) => i < people().length);
 }
 function dropsNote(r) {
   const xLoss = extrasLoss(r).map((t) => cap1(t.replace(/ \(.*\)$/, '')));
@@ -5283,10 +5481,8 @@ function dropsNote(r) {
     ? `<div class="gain">${gain.length > 8
       ? `<details data-row="card-gain"><summary>More cover${gw ? ` for ${gw}` : ''} than you have now (${gain.length})</summary>${list(gain)}</details>`
       : `<div class="cd-h">More cover${gw ? ` for ${gw}` : ''} than you have now</div>${list(gain)}`}</div>` : '';
-  const d = dropsBy(r);
-  const loseWho = Object.keys(d).filter((i) => d[i].length).map(Number);
-  const lw = whoWord(loseWho);
-  const loseHead = `Less cover ${lw === 'you both' ? 'for you both' : lw === 'your partner' ? 'for your partner' : lw === 'you' ? 'for you' : ''} than ${lw === 'your partner' ? 'they have' : 'you have'} now (${lose.length})`;
+  const lw = whoWord(lossPeople(r));
+  const loseHead = `Less cover${lw ? ` for ${lw}` : ''} than ${lw === 'your partner' ? 'they have' : lw === 'your child' ? 'they have' : lw === 'your children' ? 'they have' : 'you have'} now (${lose.length})`;
   const loseHtml = lose.length ? `<div class="lose">${lose.length > 8 ? `<details data-row="card-lose"><summary>${loseHead}</summary>${list(lose)}</details>` : `<div class="cd-h">${loseHead}</div>${list(lose)}`}</div>` : '';
   return `<div class="coverdiff">${newLine}${loseHtml}${gainHtml}</div>`;
 }
@@ -5311,7 +5507,7 @@ function whatIfLine(r) {
 
 // ---------------------------------------------------------------- a baby on the way
 function pregnancyNeeded() {
-  return Object.values(S.hospUse || {}).some((u) => (u.cats || []).includes('PregnancyBirth'));
+  return [0, 1].some((i) => plansPregnancy(i));
 }
 
 // Months this year on cover that includes the baby: changed about 2 months before the due date.
@@ -5350,7 +5546,7 @@ function applyBabyUpgrade(r, months, up) {
   };
   let extra = 0, missing = false;
   if (r.split) {
-    const pw = [0, 1].find((j) => (S.hospUse?.[j]?.cats || []).includes('PregnancyBirth')) ?? 0;
+    const pw = [0, 1].find((j) => plansPregnancy(j)) ?? [0, 1].find((j) => (S.hospUse?.[j]?.cats || []).includes('PregnancyBirth')) ?? 0;
     const x = r.split[pw];
     const hhx = { ...hh, adultAges: [hh.adultAges[pw]], lhc: [hh.lhc?.[pw] || 0], abdKept: [hh.abdKept?.[pw]], rebateTier: rebateTier(hh.income, 'C', 0) };
     for (const p of x.products) { const b = bump(p, hhx); if (b == null) missing = true; else extra += b; }
@@ -5394,13 +5590,26 @@ function setTier(u, tier) {
 }
 
 // ---------------------------------------------------------------- waiting periods on more cover
+// By law the wait for psychiatric care, rehabilitation and palliative care is at most 2 months, even for a
+// pre-existing condition; other new hospital cover waits 2 months, or 12 for pre-existing conditions.
+const PREEX_EXEMPT = ['HospitalPsychiatric', 'Rehabilitation', 'PalliativeCare'];
+function hospWaitText(cats, months = 2, pre = 12) {
+  const ex = cats.filter((c) => PREEX_EXEMPT.includes(c));
+  if (cats.length && ex.length === cats.length) return `${months} months, even if pre-existing`;
+  return `${months} months (${pre} if pre-existing${ex.length ? '; psychiatric, rehab and palliative care 2' : ''})`;
+}
+// moving from restricted to full psychiatric cover: the once-in-a-lifetime upgrade waiver skips the wait
+function psychWaiverApplies(persons) {
+  if (!neededByAnyone().has('HospitalPsychiatric')) return false; // only worth saying to someone who wants psychiatric cover
+  return currentHospitals().some((x) => (!x.persons || x.persons.some((i) => persons.includes(i))) && x.p.h.cats?.HospitalPsychiatric === 'R');
+}
+// someone in the household for whom pregnancy cover is relevant (a woman under 50)
+const pregnancyRelevant = () => adultAges().some((a, i) => (S.gender || [])[i] === 'F' && Number(a) < 50);
 // What would start a waiting period if you moved to this option: hospital categories and extras services it
 // covers that your current cover doesn't (per person for separate policies). With no current cover, all of it.
 function upgradeWaits(r) {
   const out = [];
   const curH = currentHospitals();
-  const curE = [...currentProducts(curSets()[0]), ...(partnerSeparate() ? currentProducts(curSets()[1]) : [])].filter((p) => p.e);
-  const hadE = new Set(curE.flatMap((p) => Object.keys(p.e.svc || {})));
   const coveredBy = (persons) => new Set(curH.filter((x) => !x.persons || x.persons.some((i) => persons.includes(i)))
     .flatMap((x) => Object.entries(x.p.h.cats).filter(([, v]) => v === 'Y').map(([k]) => k)));
   const parts = r.split ? r.split.map((x, i) => ({ who: i, prods: x.products })) : [{ who: null, prods: r.products }];
@@ -5410,29 +5619,21 @@ function upgradeWaits(r) {
       const had = coveredBy(part.who == null ? [0, 1] : [part.who]);
       const added = Object.entries(h.h.cats).filter(([k, v]) => v === 'Y' && !had.has(k)).map(([k]) => k);
       const w = h.h.waits || {};
-      if (added.includes('PregnancyBirth')) out.push({ who: part.who, what: 'Pregnancy & birth', wait: `${w.PregnancyBirth ?? 12} months` });
-      const rest = added.filter((k) => k !== 'PregnancyBirth');
+      if (added.includes('PregnancyBirth') && pregnancyRelevant()) out.push({ who: part.who, what: 'Pregnancy & birth', wait: `${w.PregnancyBirth ?? 12} months, served before the birth` });
+      const rest = added.filter((k) => k !== 'PregnancyBirth' && (k !== 'AssistedReproductive' || pregnancyRelevant()));
+      if (rest.includes('HospitalPsychiatric') && psychWaiverApplies(part.who == null ? [0, 1] : [part.who])) out.push({ who: part.who, what: 'Hospital psychiatric', wait: 'none if you use your one-off psychiatric upgrade waiver' });
       if (rest.length) {
         // name only what someone ticked as a need; count the rest so the row stays a few lines
-        const wait = `${w.Other ?? 2} months (${w.PreExisting ?? 12} if pre-existing)`;
-        const needs = new Set(Object.entries(S.hospUse || {}).filter(([i]) => part.who == null || Number(i) === part.who || (part.who === 0 && Number(i) >= 2)).flatMap(([, u]) => u.cats || []));
+        const wait = hospWaitText(rest, w.Other ?? 2, w.PreExisting ?? 12);
+        const needs = new Set(Object.keys(S.hospUse || {}).map(Number).filter((i) => part.who == null || i === part.who || (part.who === 0 && i >= 2)).flatMap((i) => [...neededBy(i)]));
         const need = rest.filter((k) => needs.has(k)), other = rest.filter((k) => !needs.has(k));
-        if (need.length) out.push({ who: part.who, what: need.map((k) => HOSPITAL_CATS[k] || k).join(', '), wait });
+        if (need.length) out.push({ who: part.who, what: need.length > 3 ? cap1(catsSummary(need)) : need.map((k) => HOSPITAL_CATS[k] || k).join(', '), wait });
         if (other.length) out.push({ who: part.who, what: !had.size ? (need.length ? 'All other categories' : 'All hospital categories') : other.length <= 3 ? other.map((k) => HOSPITAL_CATS[k] || k).join(', ') : `${other.length} ${need.length ? 'other ' : ''}hospital categories`, wait });
       }
     }
-    const e = part.prods.find((p) => p.e);
-    if (e && S.want !== 'H') {
-      // services you use whose category this extras policy covers but your current extras don't
-      const used = new Set((query(S.preferred).usage || []).filter((u) => part.who == null || u.person === part.who)
-        .map((u) => CATALOGUE.find((c) => c.id === u.id)).filter(Boolean).flatMap((c) => (Array.isArray(c.cat) ? c.cat : [c.cat])));
-      for (const cat of used) {
-        const svc = e.e.svc?.[cat];
-        if (!svc || !svc.w || hadE.has(cat)) continue;
-        out.push({ who: part.who, what: cap1(catName(cat)), wait: `${svc.w} month${svc.w === 1 ? '' : 's'}` });
-      }
-    }
   }
+  // extras: the same waits the card lists (new categories, and higher benefits than now), once per option
+  if (S.want !== 'H') for (const x of waitList(r)) out.push({ who: null, extras: true, what: x.up ? `${x.g} (higher benefit)` : x.g, wait: `${x.w} month${x.w === 1 ? '' : 's'}` });
   return out;
 }
 
@@ -5485,7 +5686,9 @@ function yr1Vs(r) {
   const f = yr1(r);
   if (f == null || !curNow) return '';
   const d = curNow.total - f;
-  return d >= 1 ? `Year 1: save ${fmt(d)} (waiting periods)` : netCoverCase() ? `Year 1: ${fmt(-d)} net (waiting periods)` : `Year 1: ${fmt(-d)} more than ${noCoverNow ? 'having no cover' : 'now'} (waiting periods)`;
+  // within a dollar either way: nothing worth a line
+  if (Math.abs(d) < 1) return '';
+  return d >= 1 ? `Year 1: save ${fmt(d)} (waiting periods)` : netCoverCase() ? `Year 1: ${fmt(-d)} more than going without (waiting periods)` : `Year 1: ${fmt(-d)} more than ${noCoverNow ? 'having no cover' : 'now'} (waiting periods)`;
 }
 // First-year cost after switching, when waiting periods make it higher than the ongoing cost.
 function firstYearLine(r) {
@@ -5527,6 +5730,7 @@ function applyHospPreset(id) {
   }
   const u = (S.hospUse[i] = S.hospUse[i] || { cats: [], stays: 0, nights: 0 });
   u.cats = p.cats.filter((c) => catFor(c, i));
+  u.preg = u.cats.includes('PregnancyBirth');
   u.mls = false;
   u.minTier = tierForCats(u.cats);
   $('hpresetNote').textContent = `${who}: ${p.desc} Change anything below.`;
@@ -5695,8 +5899,15 @@ function whyLine(r, top) {
   if (r.split) {
     const need = [0, 1].find((i) => plansPregnancy(i));
     const same = r.split.length === 2 && r.split[0].products.map((p) => p.id).sort().join() === r.split[1].products.map((p) => p.id).sort().join();
-    if (need != null) bits.push(`Only ${need === 0 ? 'you pay' : 'your partner pays'} for pregnancy cover`);
-    else if (!same && !unusedPartnerExtras(r)) bits.push('Each of you only pays for the cover you need');
+    const hp = [0, 1].map((i) => r.split[i]?.products.find((p) => p.h));
+    const hasPreg = (i) => hp[i]?.h.cats.PregnancyBirth === 'Y';
+    // only true when the other partner's policy really leaves pregnancy out
+    if (need != null && hasPreg(need) && !hasPreg(1 - need)) bits.push(`Only ${need === 0 ? 'you pay' : 'your partner pays'} for pregnancy cover`);
+    else if (!same && !unusedPartnerExtras(r) && hp[0] && hp[1] && hp[0].id !== hp[1].id) {
+      // the partner who asked for more has at least as much hospital cover as the other
+      const more = neededBy(0).size >= neededBy(1).size ? 0 : 1;
+      if (tierRank(hp[more].h.tier) >= tierRank(hp[1 - more].h.tier) && hp[0].h.tier !== hp[1].h.tier) bits.push('Each of you only pays for the cover you need');
+    }
   }
   // more hospital cover than now
   if (S.want !== 'E' && currentHospitals().length) {
@@ -5719,8 +5930,11 @@ function whyLine(r, top) {
   // holds up best in a bad year: each "what if" tested on its own
   if (others.length) {
     let best = null;
+    // only the "what ifs" that fit what this household uses
+    const used = usedGroups();
+    const fits = { back: used.has('Physio & allied'), teeth: [...used].some((g) => /dental/i.test(g)), mind: used.has('Mental health & other allied'), specs: used.has('Optical'), hosp: S.want !== 'E' };
     for (const sc of SCENARIOS) {
-      if ((S.scen || []).includes(sc.id)) continue; // already in the totals
+      if ((S.scen || []).includes(sc.id) || fits[sc.id] === false) continue; // already in the totals, or not their kind of year
       const mineX = scenExtra(r, sc);
       if (mineX == null) continue;
       const theirs = Math.min(...others.map((x) => scenExtra(x, sc) ?? Infinity));
@@ -5729,7 +5943,7 @@ function whyLine(r, top) {
     }
     if (best) bits.push(`Best if you ${best.sc.short}: ${fmt(best.mineX)} out of pocket vs ${fmt(best.theirs)}+ on the others`);
   }
-  if (whatIf?.first && others.some((x) => (whatIf.first.get(keyOf(x)) ?? x.total) > x.total + 0.5) && (whatIf.first.get(keyOf(r)) ?? r.total) <= r.total + 0.5) {
+  if (whatIf?.first && whatIf.first.has(keyOf(r)) && others.some((x) => (whatIf.first.get(keyOf(x)) ?? x.total) > x.total + 0.5) && whatIf.first.get(keyOf(r)) <= r.total + 0.5) {
     bits.push("Waiting periods don't cost you anything in Year 1");
   }
   if (!AMBULANCE.stateCovered.includes(S.stateCode) && r.ambulanceCovered && others.some((x) => !x.ambulanceCovered)) bits.push('Includes ambulance cover');
@@ -5742,7 +5956,8 @@ function whyLine(r, top) {
   }
   if (!bits.length) {
     const i = top.indexOf(r);
-    bits.push(i === 0 ? 'Lowest all-in cost for what you use' : `Only ${fmt(r.total - top[0].total)} a year more than Option #1`);
+    const d = r.total - top[0].total;
+    bits.push(i === 0 ? 'Lowest all-in cost for what you use' : d <= 300 ? `Only ${fmt(d)} a year more than Option #1` : `${fmt(d)} a year more than Option #1`);
   }
   return `<b>Why it stands out</b><ul class="whyticks">${bits.slice(0, 3).map((b) => `<li>${esc(b)}</li>`).join('')}</ul>`;
 }
@@ -5925,8 +6140,17 @@ function netCoverWhat(short) {
 }
 function netCoverWhy(c, r) {
   const preg = [0, 1].some((i) => plansPregnancy(i));
-  const offs = [c.mls >= 1 && `the ${fmt(c.mls)} Medicare levy surcharge it ends`, S.want === 'HE' && 'what its extras pay back'].filter(Boolean);
-  return `That's Option #1's ${fmt(r.premium?.net || 0)} in premiums${offs.length ? `, less ${offs.join(' and ')}` : ''}, compared with going without. For it you get ${netCoverWhat()}; without cover, any hospital stay${preg ? ', including the birth,' : ''} is yours to pay for or to wait for in the public system.`;
+  // the parts, so the sentence adds up to the net figure shown
+  const prem = r.premium?.net || 0;
+  const xs = (r.hospital?.excess || 0) + (r.hospital?.copay || 0);
+  const ambNew = (r.ambAddOn?.net || 0) + (r.ambulance || 0);
+  const ambOld = (c.ambulance || 0) + (c.ambViaPolicy || 0);
+  const mls = (c.mls || 0) - (r.mls || 0);
+  const back = S.want === 'HE' ? (c.extras?.outOfPocket || 0) - (r.extras?.outOfPocket || 0) : 0;
+  const plus = [`${fmt(prem)} in premiums`, xs >= 1 && `${fmt(xs)} in excess for your planned stay`, ambNew >= 1 && `${fmt(ambNew)} for ambulance cover`].filter(Boolean);
+  const less = [mls >= 1 && `the ${fmt(mls)} Medicare levy surcharge it ends`, back >= 1 && `${fmt(back)} its extras pay back`, ambOld >= 1 && `the ${fmt(ambOld)} ambulance cost you'd have without cover`].filter(Boolean);
+  const join = (a) => (a.length > 1 ? `${a.slice(0, -1).join(', ')} and ${a[a.length - 1]}` : a[0] || '');
+  return `That's Option #1's ${join(plus)}${less.length ? `, less ${join(less)}` : ''}. For it you get ${netCoverWhat()}. Without cover you'd be a public patient: no choice of doctor${preg ? ' (the birth included)' : ''}, and waiting lists for planned surgery.`;
 }
 function saveBadge(r) {
   if (!curNow || r === curNow) return '';
@@ -5949,20 +6173,20 @@ function saveBadge(r) {
   const d = curNow.total - r.total;
   if (Math.abs(d) < 1) return '<div class="savebadge same">Same cost as your existing cover</div>';
   const y2 = yr2(r);
-  const y2line = y2 != null && Math.abs(y2 - r.total) >= 1 ? `<span class="yr2">From Year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : netCoverCase() ? `${fmt(y2 - curNow.total)} a year net` : `${fmt(y2 - curNow.total)} a year more than ${noCoverNow ? 'having no cover' : 'now'}`}</span>` : '';
+  const y2line = y2 != null && Math.abs(y2 - r.total) >= 1 ? `<span class="yr2">From Year 2: ${curNow.total - y2 >= 1 ? `save ${fmt(curNow.total - y2)} a year` : netCoverCase() ? `${fmt(y2 - curNow.total)} a year more than going without` : `${fmt(y2 - curNow.total)} a year more than ${noCoverNow ? 'having no cover' : 'now'}`}</span>` : '';
   if (rankY1) {
     const vs = noCoverNow ? 'having no cover' : 'your existing cover';
     return d > 0 ? `<div class="savebadge good">Save <b>${fmt(d)}</b> in Year 1 <span>vs ${vs}</span>${y2line}</div>`
-      : netCoverCase() ? `<div class="savebadge adds"><b>+${fmt(-d)}</b> net in Year 1 <span>for ${netCoverWhat(true)}, over going without</span>${y2line}</div>`
+      : netCoverCase() ? `<div class="savebadge adds"><b>+${fmt(-d)}</b> net in\u00a0Year\u00a01 <span>for ${netCoverWhat(true)}, over going without</span>${y2line}</div>`
       : `<div class="savebadge bad"><b>${fmt(-d)}</b> more in Year 1 <span>than ${vs} (waiting periods)</span>${y2line}</div>`;
   }
   const y1 = yr1Vs(r);
   return d > 0
-    ? `<div class="savebadge good">Save <b>${fmt(d)}</b>/yr <span>${fmt(d / 12)} a month vs ${noCoverNow ? 'having no cover' : 'your existing cover'} · ${!noCoverNow && !noHospNow() && currentHospitals().length && maxExcessOf(r) > maxExcessOf(curNow) ? `with a higher excess (${fmt(maxExcessOf(r))} vs ${maxExcessOf(curNow) ? fmt(maxExcessOf(curNow)) : 'none'})` : 'based on YOUR usage'}</span>${y1 ? `<span class="yr1">${y1}</span>` : ''}</div>`
+    ? `<div class="savebadge good">Save <b>${fmt(d)}</b>/yr <span>${d >= 12 ? `${fmt(d / 12)} a month ` : ''}vs ${noCoverNow ? 'having no cover' : 'your existing cover'} · ${!noCoverNow && !noHospNow() && currentHospitals().length && excessRise(r, curNow) ? (() => { const x = excessRise(r, curNow); return `with a higher excess${adultAges().length > 1 ? ` for ${x.i ? 'your partner' : 'you'}` : ''} (${fmt(x.to)} vs ${x.from ? fmt(x.from) : 'none'})`; })() : 'based on YOUR usage'}</span>${y1 ? `<span class="yr1">${y1}</span>` : ''}</div>`
     : noHospNow()
       ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr <span>adds hospital cover (you have none now)</span></div>`
       : curMissNow.length && !coverDrops(r).length
-      ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr <span>adds ${esc(listCats(curMissNow.filter((c) => (catsY(r) || []).includes(c)), 99) || 'the cover you asked for')}</span></div>`
+      ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr <span>adds ${esc(catsSummary(curMissNow.filter((c) => (catsY(r) || []).includes(c))) || 'the cover you asked for')}</span></div>`
       : netCoverCase()
       ? `<div class="savebadge adds"><b>+${fmt(-d)}</b>/yr net <span>for ${netCoverWhat(true)}, over going without</span>${y1 ? `<span class="yr1">${y1}</span>` : ''}</div>`
       : `<div class="savebadge bad"><b>${fmt(-d)}</b>/yr more <span>than ${noCoverNow ? 'having no cover' : 'your existing cover'}</span></div>`;
@@ -6190,7 +6414,7 @@ function insightsPanel(list, cur, netMap) {
     out.push({ icon: '&#36;', h: np.head > 0.5 ? `Save ${fmt(np.head)} a year with Option #1` : np.head < -0.5 ? `Option #1 costs ${fmt(-np.head)} a year more than now` : 'Option #1 costs about what you pay now', t: `${Math.abs(np.yourSave) < 1 ? `${np.ni === 1 ? 'Your' : "Your partner's"} cover costs the same` : np.yourSave > 0 ? `${fmt(np.yourSave)} less on ${np.ni === 1 ? 'your' : "your partner's"} cover` : `${fmt(-np.yourSave)} more on ${np.ni === 1 ? 'your' : "your partner's"} cover`}; ${np.Who === 'You' ? 'your' : "your partner's"} new cover ${np.better >= 0 ? `leaves you ${fmt(np.better)} a year better off` : `costs a net ${fmt(-np.better)} a year`}${np.mlsNow ? ', as it ends the Medicare levy surcharge you both pay' : ''}.` });
   } else if (cur) {
     const d = cur.total - best.total;
-    if (d > 0.5 && !noCoverNow && isUpgradeOn(best, cur)) out.push({ icon: '&#11014;', h: `Option #1 beats your cover on price and cover`, t: `${fmt(d)} a year less, more hospital cover, no higher excess.` });
+    if (d > 0.5 && !noCoverNow && isUpgradeOn(best, cur)) out.push({ icon: '&#11014;', h: `Option #1 beats your cover on price and cover`, t: (() => { const dl = coverDelta(best, cur); return `${fmt(d)} a year less, ${dl.gain > 0 ? 'more hospital cover' : 'the same hospital cover'}${dl.xGain.length ? `, extras that also cover ${listCats(dl.xGain.map((x) => x.toLowerCase()), 3)}` : ''}, and no higher excess for anyone.`; })() });
     else if (d > 0.5 && noCoverNow) {
       out.push({ icon: '&#36;', h: `Option #1 costs ${fmt(d)} a year less than having no cover`, t: S.want === 'E' ? `Its benefits more than cover its premium for the services you use.${cur.mls ? ` The ${fmt(cur.mls)} Medicare levy surcharge stays either way: only hospital cover removes it.` : ''}` : `${cur.mls ? `Without hospital cover you pay a ${fmt(cur.mls)} Medicare levy surcharge${cur.extras?.totalFees ? ', and for your services in full' : ''}.` : cur.extras?.totalFees ? 'Right now you pay for your services in full.' : ''}${(cur.ambulance || 0) > 1 ? ` Without cover the ambulance trips you entered cost about ${fmt(cur.ambulance)}.` : ''}`.trim() || 'Right now you pay for everything yourself.' });
     } else if (d > 0.5) {
@@ -6199,7 +6423,7 @@ function insightsPanel(list, cur, netMap) {
       else out.push({ icon: '&#36;', h: `Save ${fmt(d)} a year by switching to Option #1`, t: coverDelta(best, cur).xLost.length ? 'Same hospital cover, but fewer kinds of extras than you have now.' : 'Same or better cover than you have now.' });
     }
     else if (noHospNow()) out.push({ icon: '&#43;', h: `Adding hospital cover costs ${fmt(-d)} a year more`, t: `You have extras only now. Option #1 is the cheapest way to add hospital cover${cur.mls ? ` (and it ends the ${fmt(cur.mls)} Medicare levy surcharge you pay now)` : ''}.` });
-    else if (curMissNow.length) out.push({ icon: '&#43;', h: `Adding ${esc(listCats(curMissNow, 99))} costs ${fmt(-d)} a year more`, t: 'Your current cover doesn\'t include it; Option #1 is the cheapest that does.' });
+    else if (curMissNow.length) out.push({ icon: '&#43;', h: `Adding ${esc(catsSummary(curMissNow))} costs ${fmt(-d)} a year more`, t: `Your current cover doesn't include ${curMissNow.length > 1 ? 'them' : 'it'}; Option #1 is the cheapest that does.` });
     else if (netCoverCase()) out.push({ icon: '&#36;', h: `Option #1 gives you ${netCoverWhat()} for a net ${fmt(-d)} a year`, t: netCoverWhy(cur, best) });
     else if (noCoverNow) out.push({ icon: '&#36;', h: `Going without cover costs ${fmt(-d)} a year less`, t: S.want === 'E' ? 'For the services you use, extras cost more than they pay back.' : `Hospital cover can still be worth it: it pays for an unexpected hospital stay, and ${adultAges().every((a) => Number(a) > 0 && Number(a) <= 31) ? 'taking it out before the 1 July after you turn 31 avoids a lifetime loading' : 'every year without it adds 2% to the Lifetime Health Cover loading you’d pay later (up to 70%)'}.` });
     else out.push({ icon: '&#10003;', h: 'Your cover is already good value', t: `Nothing in the rankings costs less for what you use.` });
@@ -6227,11 +6451,12 @@ function insightsPanel(list, cur, netMap) {
       if (!y || r.total - best.total > budget || !y.some((c) => !by.includes(c) && catForHousehold(c))) continue;
       if (!up || y.length > up.y.length || (y.length === up.y.length && r.total < up.r.total)) up = { r, y };
     }
+    // only worth a tip when the extra cover matters for this household (asked for, or key for their age/stage)
+    if (up && !up.y.some((c) => !by.includes(c) && catForHousehold(c) && catWeight(c) >= 1)) up = null;
     if (up) {
       const extra = up.y.filter((c) => !by.includes(c) && catForHousehold(c));
       // name what was ticked as a need; otherwise a count and a couple of examples
-      const needSet = new Set(Object.values(S.hospUse || {}).flatMap((u) => u.cats || []));
-      const named = extra.filter((c) => needSet.has(c));
+      const named = extra.filter((c) => catWeight(c) >= 1);
       const eg = (named.length ? named : extra.filter((c) => !MINOR_CATS.includes(c))).slice(0, 3);
       const adds = extra.length <= 3 ? listCats(extra, 99) : `${extra.length} hospital categories, incl. ${listCats(eg.length ? eg : extra.slice(0, 3), 99)}`;
       if (!topNow.includes(up.r)) out.push({ icon: '&#8593;', h: `+${fmt(up.r.total - best.total)} a year buys more cover`, t: `Option #${rankOf(up.r)} adds ${esc(adds)}.` });
@@ -6258,8 +6483,10 @@ function insightsPanel(list, cur, netMap) {
     const stay = near.find((r) => r.products.every((p) => mine.has(providerOf(p))) && keyOf(r) !== keyOf(cur));
     if (stay && stay !== best) {
       const d = cur.total - stay.total;
-      const fund = [...new Set(cur.products.map(shortSeller))].join(' & ');
-      out.push({ icon: '&#8635;', h: `Staying with ${esc(fund)}?`, t: d > 0.5 ? `Their best (Option #${rankOf(stay)}) saves ${fmt(d)} a year without changing fund.` : `None of their policies beat what you pay now.` });
+      const funds = [...new Set(cur.products.map((p) => provName(p).replace(/ \(.*\)$/, '')))];
+      const h = funds.length > 1 ? `Keeping ${esc(funds[0])} and ${esc(funds[1])}?` : `Staying with ${esc(funds[0])}?`;
+      const meets = !curMissNow.length;
+      out.push({ icon: '&#8635;', h, t: d > 0.5 ? `${funds.length > 1 ? 'The best combination of their policies' : 'Their best'} (Option #${rankOf(stay)}) saves ${fmt(d)} a year without changing fund${funds.length > 1 ? 's' : ''}.` : meets ? `None of their policies beat what you pay now.` : `Their cheapest policy that covers what you asked for is Option #${rankOf(stay)}, ${fmt(-d)} a year more than now.` });
     }
   }
   // the compared options: is the extra worth it?
@@ -6304,25 +6531,31 @@ function insightsPanel(list, cur, netMap) {
   }
   // Lifetime Health Cover: the deadline (28-31 with no hospital cover now), or what a loading costs in dollars
   if (S.want !== 'E' && !currentHospitals().length) {
-    const near31 = adultAges().map((a, i) => ({ a: Number(a), i })).filter((x) => x.a >= 28 && x.a <= 31);
-    if (near31.length) out.push({ icon: '&#9200;', h: 'Beat the Lifetime Health Cover deadline', t: `Take out hospital cover by the 1 July after ${near31.length > 1 || near31[0].i ? 'each of you turns' : 'you turn'} 31 to avoid a loading of 2% for every year you wait (up to 70%, for 10 years).` });
+    // only people who can still avoid a loading: 31 or under, with none entered
+    const young = adultAges().map((a, i) => ({ a: Number(a), i })).filter((x) => x.a > 0 && x.a <= 31 && !(Number(S.lhc?.[x.i]) > 0));
+    const near = young.filter((x) => x.a >= 28);
+    const who = (xs) => (xs.length > 1 ? 'each of you turns' : xs[0].i ? 'your partner turns' : 'you turn');
+    if (near.length) out.push({ icon: '&#9200;', h: 'Beat the Lifetime Health Cover deadline', t: `Take out hospital cover by the 1 July after ${who(near)} 31 to avoid a loading of 2% for every year you wait (up to 70%, until you've held cover for 10 years).` });
+    else if (young.length) out.push({ icon: '&#9200;', h: 'No loading if you start before 31', t: `Hospital cover taken out by the 1 July after ${who(young)} 31 never carries a Lifetime Health Cover loading. After that, 2% is added for every year without cover (up to 70%).${S.cover === 'S' && young[0].a < 25 ? ' Under 25 (or studying)? Many funds let you stay on a parent\'s family policy as a dependant, which can be cheaper.' : ''}` });
   }
-  if (S.want !== 'E' && (best.premium?.lhcLoading || 0) >= 50) out.push({ icon: '&#37;', h: `Lifetime Health Cover adds ${fmt(best.premium.lhcLoading)} a year`, t: 'That is in Option #1\'s premium. The loading comes off after 10 years of continuous hospital cover.' });
+  if (S.want !== 'E' && (best.premium?.lhcLoading || 0) >= 50) out.push({ icon: '&#37;', h: `Lifetime Health Cover adds ${fmt(best.premium.lhcLoading)} a year`, t: 'That is in Option #1\'s premium. It comes off once you\'ve held hospital cover for 10 years in a row (counting from when the loading started, so check how long you\'ve had cover).' });
   // psychology: Medicare's Better Access rebates can beat extras
-  if (S.want !== 'H' && (query(S.preferred).usage || []).some((u) => /^ps_/.test(u.id) && u.count)) out.push({ icon: '&#9432;', h: 'Psychology: check Medicare first', t: 'With a GP mental health treatment plan, Medicare pays a rebate for up to 10 sessions a year (Better Access). You can\'t claim extras for the same session, so compare the gap both ways.' });
+  if (S.want !== 'H' && Object.values(S.usage || {}).some((u) => (u.ps_i || 0) + (u.ps_s || 0) > 0)) out.push({ keep: true, icon: '&#9432;', h: 'Psychology: Medicare first', t: S.psychPlan === false
+    ? `Costed without a GP mental health treatment plan, so extras pay for every session. With a plan, Medicare pays about ${fmt(PSYCH_MEDICARE.rebate)} of each of up to ${PSYCH_MEDICARE.sessions} sessions a year, and extras can't pay those too. <button type="button" class="linkbtn" data-psychplan>Cost it with a plan</button>`
+    : `Costed with a GP mental health treatment plan: Medicare pays about ${fmt(PSYCH_MEDICARE.rebate)} of each of your first ${PSYCH_MEDICARE.sessions} sessions a year and you pay the gap (extras can't pay those). Extras pay from session ${PSYCH_MEDICARE.sessions + 1}. <button type="button" class="linkbtn" data-psychplan>Cost it without a plan</button>` });
   // pregnancy cover: the wait is the thing people miss
   {
     const pi = [0, 1].find((i) => plansPregnancy(i));
     const hp = pi != null && S.want !== 'E' ? (hospParts(best).find((x) => x.i === Number(pi)) || hospParts(best)[0])?.p : null;
     if (hp && hp.h.cats.PregnancyBirth === 'Y' && !(cur && currentHospitals().some((x) => x.p.h.cats.PregnancyBirth === 'Y'))) {
-      out.splice(Math.min(1, out.length), 0, { icon: '&#9203;', h: `Pregnancy cover has a ${hp.h.waits?.PregnancyBirth ?? 12}-month wait`, t: `The policy needs to start before you conceive for the birth to be covered. Not in these totals: a private obstetrician's pregnancy management fee (often $3,000 to $6,000 out of pocket after Medicare), which hospital cover doesn't pay.${effCover() === 'S' ? " A single policy doesn't cover your baby: most funds let you change to single parent cover within about 2 to 3 months of the birth, backdated to the birth date (a few only cover a baby admitted straight after the birth if you change before it, so check with your fund)." : ''}` });
+      out.splice(Math.min(1, out.length), 0, { icon: '&#9203;', h: `Pregnancy cover has a ${hp.h.waits?.PregnancyBirth ?? 12}-month wait`, t: `The ${hp.h.waits?.PregnancyBirth ?? 12} months must be served by the time of the birth, so take the policy out at least 3 months before you start trying (${hp.h.waits?.PregnancyBirth ?? 12} months before the due date). Not in these totals: a private obstetrician's pregnancy management fee (often $3,000 to $6,000 out of pocket after Medicare), which hospital cover doesn't pay.${effCover() === 'S' ? " A single policy doesn't cover your baby: most funds let you change to single parent cover within about 2 to 3 months of the birth, backdated to the birth date (a few only cover a baby admitted straight after the birth if you change before it, so check with your fund)." : effCover() === 'C' && !best.split ? ' A couples policy doesn\'t cover a baby either: most funds let you change to family cover within about 2 to 3 months of the birth (some allow up to 12), backdated to the birth date. The premium rises from then.' : ''}` });
     }
   }
   // the surcharge: what going without hospital cover would cost
   {
     const q = query(S.preferred);
     if (S.want === 'E' && q.mls > 0 && mlsAlt && mlsAlt.prem < q.mls - 1) {
-      out.unshift({ icon: '&#36;', h: `Add hospital cover and be ${fmt(q.mls - mlsAlt.prem)} a year better off`, t: `Every total here includes the ${fmt(q.mls)} Medicare levy surcharge. ${esc(mlsAlt.label)} ends it for ${fmt(mlsAlt.prem)} a year.` });
+      out.unshift({ icon: '&#36;', h: `Add hospital cover and be ${fmt(q.mls - mlsAlt.prem)} a year better off`, t: `Every total here includes the ${fmt(q.mls)} Medicare levy surcharge. ${esc(mlsAlt.label)} ends it for ${fmt(mlsAlt.prem)} a year${mlsAlt.lhc ? `, including your ${mlsAlt.lhc}% Lifetime Health Cover loading` : ''}.` });
     } else if (S.want !== 'E' && !cur && q.mlsIfNone > 0 && !best.split) {
       const hps = best.products.filter((x) => x.k !== 'E');
       const hprem = S.want === 'H' ? best.premium.net : hps.length === 1 && hps[0].k === 'H' ? premiumFor(hps[0], q.household).net : 0;
@@ -6335,7 +6568,9 @@ function insightsPanel(list, cur, netMap) {
     const second = list[1];
     out.push({ icon: '&#36;', h: 'How Option #1 adds up', t: `${fmt(best.premium.net)} in premiums${fees ? `, and it pays back ${fmt(back)} of your ${fmt(fees)} in services (${Math.round((100 * back) / fees)}%)` : ''}${(best.hospital?.excess || 0) + (best.hospital?.copay || 0) > 0 ? `, plus ${fmt((best.hospital.excess || 0) + (best.hospital.copay || 0))} excess for the hospital stay` : ''}${best.mls ? `, plus the ${fmt(best.mls)} surcharge` : ''}.${second && topNow.includes(second) ? ` Option #2 is ${Math.abs(second.total - best.total) < 1 ? 'the same price' : `${fmt(second.total - best.total)} a year more`}.` : ''}` });
   }
-  const top = out.slice(0, 4);
+  // tips marked keep (e.g. Medicare for psychology) always make the cut
+  const kept = out.filter((x) => x.keep);
+  const top = [...out.filter((x) => !x.keep).slice(0, Math.max(0, 4 - kept.length)), ...kept].slice(0, 4);
   return `<section class="panel insights"><div class="blurbhead"><h2 class="ph">Worth knowing <span class="yourusage">based on your usage</span></h2><button type="button" class="linkbtn" id="copySummary">Copy</button></div>
     <ul class="insgrid">${top.map((x) => `<li><span class="ic" aria-hidden="true">${x.icon}</span><span><b>${rankLinks(x.h)}</b><br>${rankLinks(x.t)}</span></li>`).join('')}</ul></section>`;
 }
@@ -6362,36 +6597,42 @@ function prosCons(cur, top) {
     if (cur) {
       // short lines: name only the hospital categories someone ticked as a need; count the rest
       // (the full lists are in the Hospital rows below)
-      const needs = new Set(Object.values(S.hospUse || {}).flatMap((u) => u.cats || []));
+      // what each person asked for (not the categories their level already includes), checked per person
+      const needs = neededByAnyone();
+      const per = (m) => [...new Set(Object.entries(m).flatMap(([i, cs]) => (cs || []).filter((c) => neededBy(Number(i)).has(c))))];
       const skip = (m) => { const o = { ...m }; if (np) { delete o[np.ni]; if (curNow.parts.kidsNew) for (const k of Object.keys(o)) if (Number(k) >= 2) delete o[k]; } return o; };
       const gb = skip(gainsBy(r)), db = skip(dropsBy(r));
       const g = [...new Set(Object.values(gb).flat())], l = [...new Set(Object.values(db).flat())];
-      const gNeed = np ? [] : g.filter((c) => needs.has(c)), gOther = g.length - gNeed.length;
-      const lNeed = l.filter((c) => needs.has(c)), lOther = l.length - lNeed.length;
-      if (gNeed.length) pro.push(`Adds what you need: ${listCats(gNeed, 99)}`);
+      const gNeed = np ? [] : per(gb), gOther = g.length - gNeed.length;
+      const lNeed = per(db), lOther = l.length - lNeed.length;
+      if (gNeed.length) pro.push(`Adds what you need: ${catsSummary(gNeed)}`);
       const whoOf = (m, cats) => whoWord(Object.keys(m).map(Number).filter((i) => (m[i] || []).some((c) => cats.includes(c) && !needs.has(c))));
       const gw = whoOf(gb, g), lw = whoOf(db, l);
       if (gOther) pro.push(`${gOther} more hospital categor${gOther === 1 ? 'y' : 'ies'}${gw ? ` for ${gw}` : ''}`);
-      if (lNeed.length) con.push(`Missing what you need: ${listCats(lNeed, 99)}`);
+      if (lNeed.length) con.push(`Missing what you need: ${catsSummary(lNeed)}`);
       if (lOther) con.push(`${lOther} fewer hospital categor${lOther === 1 ? 'y' : 'ies'}${lw ? ` for ${lw}` : ''}`);
       const back = (r.extras?.totalBenefit || 0) - (cur.extras?.totalBenefit || 0);
       if (S.want !== 'H' && back > 50) pro.push(`${fmt(back)} more back on your services`);
       if (S.want !== 'H' && back < -50) con.push(`${fmt(-back)} less back on your services`);
-      const hx = (x) => { const h = hospParts(x)[0]?.p; return h && !x.split ? headlineExcess(h) : null; };
-      if (hx(r) != null && hx(cur) != null) {
-        if (hx(r) < hx(cur)) pro.push(`Lower excess (${fmt(hx(r))} vs ${fmt(hx(cur))})`);
-        if (hx(r) > hx(cur)) con.push(`Higher excess (${fmt(hx(r))} vs ${fmt(hx(cur))})`);
+      // excess per person (separate policies compared partner by partner), co-payments included
+      if (cur.products.some((p) => p.h) && r.products.some((p) => p.h)) {
+        const up = excessRise(r, cur);
+        if (up) con.push(`Higher excess${adultAges().length > 1 ? ` for ${up.i ? 'your partner' : 'you'}` : ''} (${fmt(up.to)} vs ${up.from ? fmt(up.from) : 'none'})`);
+        else if (maxExcessOf(r) < maxExcessOf(cur)) pro.push(`Lower excess (${maxExcessOf(r) ? fmt(maxExcessOf(r)) : 'none'} vs ${fmt(maxExcessOf(cur))})`);
       }
+      // extras or ambulance lost against what's held now
+      const xl = extrasLoss(r, cur);
+      if (xl.length) con.push(cap1(xl[0]));
       const w = upgradeWaits(r);
       if (w.length) {
-        // the waits that matter: on what you need (e.g. pregnancy); otherwise just the longest
+        // the waits that matter: what someone asked for (e.g. pregnancy) and services they use; else the longest
         const needNames = [...needs].map((c) => HOSPITAL_CATS[c]).filter(Boolean);
-        const key = w.filter((x) => needNames.some((n) => x.what.includes(n)));
         const longest = Math.max(...w.map((x) => Number((x.wait.match(/\d+/) || [0])[0])));
-        // waits on things you need always show; other waits only matter if they cost you something in Year 1
-        const fy = whatIf?.first?.get(keyOf(r));
-        if (key.length) con.push(`New wait: ${key.map((x) => `${needNames.find((n) => x.what.includes(n))} ${x.wait.replace(/ \(.*\)$/, '')}`).join(', ')}`);
-        else if (fy != null && fy > r.total + 50) con.push(`New waiting periods (up to ${longest} months)`);
+        const keyW = [...new Set(w.filter((x) => x.extras || needNames.some((n) => x.what.includes(n)) || /Pregnancy/.test(x.what))
+          .sort((a, b) => Number((b.wait.match(/\d+/) || [0])[0]) - Number((a.wait.match(/\d+/) || [0])[0]))
+          .map((x) => `${x.extras ? x.what : needNames.find((n) => x.what.includes(n)) || x.what} ${x.wait.replace(/ \(.*\)$/, '').replace(/,.*$/, '')}`))];
+        if (keyW.length) con.push(`New wait: ${keyW.slice(0, 2).join(', ')}${keyW.length > 2 ? ` and ${keyW.length - 2} more` : ''}`);
+        else con.push(`New waiting periods (up to ${longest} months)`);
       } else pro.push('No new waiting periods');
     }
     if (!AMBULANCE.stateCovered.includes(S.stateCode) && S.want !== 'E') {
@@ -6426,13 +6667,16 @@ let lastList = [];
 function topNowRank(top, r) { const i = lastList.indexOf(r); return i >= 0 ? i + 1 : top.indexOf(r) + 1; }
 
 // Categories that only apply to one sex: never counted as a gain (or a loss) for someone they can't apply to.
-const FEMALE_ONLY = ['PregnancyBirth', 'Gynaecology', 'MiscarriageTerminationOfPregnancy'];
+const FEMALE_ONLY = ['PregnancyBirth', 'Gynaecology', 'MiscarriageTerminationOfPregnancy', 'AssistedReproductive'];
 const MALE_ONLY = ['MaleReproductive'];
+const PREGNANCY_CATS = ['PregnancyBirth', 'AssistedReproductive', 'MiscarriageTerminationOfPregnancy'];
 function catFor(c, i) {
   const g = (S.gender || [])[i];
-  if (i >= 2 || i == null) return true; // children, or not a person
+  if (i >= 2 || i == null) return !PREGNANCY_CATS.includes(c) || i == null; // children: no pregnancy cover
   if (g === 'M' && FEMALE_ONLY.includes(c)) return false;
   if (g === 'F' && MALE_ONLY.includes(c)) return false;
+  // pregnancy and IVF don't count as a gain or loss from 55
+  if (PREGNANCY_CATS.includes(c) && Number(S.ages?.[i]) >= 55) return false;
   return true;
 }
 function catForHousehold(c) {
@@ -6826,13 +7070,13 @@ const GUIDE_STEPS = [
       const ids = people().map((_, i) => i);
       if (!ids.includes(G.xp)) G.xp = 0;
       const mine = S.usage[G.xp] || {};
-      const groups = [...new Set(CATALOGUE.map((c) => c.group))];
+      const groups = [...new Set(CATALOGUE.filter((c) => !c.hidden).map((c) => c.group))];
       const total = Object.values(mine).reduce((a, b) => a + b, 0);
       return `${gTabs(ids, G.xp, 'xp')}
         <div class="gfield"><span class="glbl">Quick start</span><div class="gpills" data-xpre>${gPill('none', 'Nothing much', G.ans[`x${G.xp}`] === 'none')}${EXTRAS_PRESETS.filter((x) => G.xp >= kidStart() || x.id !== 'child').map((x) => gPill(x.id, esc(x.label), G.ans[`x${G.xp}`] === x.id)).join('')}</div></div>
         <div class="gfield"><span class="glbl">Services <span class="gopt">${total} a year</span></span>
         <div class="gsvcs">${groups.map((g) => {
-          const items = CATALOGUE.filter((c) => c.group === g);
+          const items = CATALOGUE.filter((c) => c.group === g && !c.hidden);
           const ct = items.reduce((s, c) => s + (mine[c.id] || 0), 0);
           return `<details class="gsvcg"${ct ? ' open' : ''}><summary><span>${esc(g)}</span>${ct ? `<span class="gbadge">${ct}</span>` : ''}</summary>${items.map((c) => {
             const n = mine[c.id] || 0;
@@ -7159,6 +7403,8 @@ function pickRecommended(list) {
     if (nearCopy(r, best)) continue;
     // a concrete reason to pay more, and no extras policy for someone who has no services
     if (unusedPartnerExtras(r) || !addsOver(r, best).length) continue;
+    // a cheaper option that already gives everything this one adds (and pays back at least as much) beats it
+    if (list.slice(1, k + 1).slice(-40).some((c) => c !== r && c.total < r.total && ok(c) && !addsOver(r, c).length && (c.extras?.totalBenefit || 0) >= (r.extras?.totalBenefit || 0) - 1)) continue;
     const pts = score(r);
     if (!pick || pts > pick.pts + 0.75) pick = { r, pts };
   }
@@ -7177,15 +7423,17 @@ function valueScore(r, best) {
     if (S.want !== 'E') {
       // each category counts once (not once per person), and minor ones count half
       // averaged over the adults, so one partner upgrading counts half as much as both (minor categories count half)
-      const n = (m) => Object.entries(m).filter(([k]) => Number(k) < adultsCount()).reduce((t, [, cs]) => t + cs.reduce((u, c) => u + (MINOR_CATS.includes(c) ? 0.5 : 1), 0), 0) / Math.max(1, adultsCount());
+      const n = (m) => Object.entries(m).filter(([k]) => Number(k) < adultsCount()).reduce((t, [, cs]) => t + cs.reduce((u, c) => u + catWeight(c), 0), 0) / Math.max(1, adultsCount());
       pts += Math.max(-6, Math.min(6, (n(moreCoverThan(r, best)) - n(moreCoverThan(best, r))) * 0.8));
       // excess waived for children / same-day surgery: one point gained or lost
       const wr = waiversOf(r), wb = waiversOf(best);
       for (const w of ['Dependents', 'DaySurgery']) if (w !== 'Dependents' || kidsCovered()) pts += (wr.has(w) ? 1 : 0) - (wb.has(w) ? 1 : 0);
     }
     if (S.want !== 'H') {
+      // kinds of extras only count for services the household uses
+      const used = usedGroups();
       const rx = extrasCovered(r);
-      pts += Math.max(-3, Math.min(3, ([...rx].filter((g) => !baseX.has(g)).length - [...baseX].filter((g) => !rx.has(g)).length) * 0.5));
+      pts += Math.max(-3, Math.min(3, ([...rx].filter((g) => !baseX.has(g) && used.has(g)).length - [...baseX].filter((g) => !rx.has(g) && used.has(g)).length) * 0.5));
     }
     if (!AMBULANCE.stateCovered.includes(S.stateCode) && S.want !== 'E' && r.ambulanceCovered && !best.ambulanceCovered) pts += 1.5;
     // Year 1 counts for half: waiting periods on a new policy can make a cheap option dear in its first year
@@ -7210,7 +7458,7 @@ function bestWhy(r, best) {
     const g = n(moreCoverThan(r, best)) - n(moreCoverThan(best, r));
     add(g * 0.8, `${g} more hospital categor${g === 1 ? 'y' : 'ies'}`);
     const xr = maxExcessOf(r), xb = maxExcessOf(best);
-    if (xr < xb) add(1 + (xb - xr) / 500, xr ? `${fmt(xr)} excess, not ${fmt(xb)}` : `No excess (Option #1: ${fmt(xb)})`);
+    if (xr < xb && noHigherExcess(r, best)) add(1 + (xb - xr) / 500, xr ? `${fmt(xr)} excess, not ${fmt(xb)}` : `No excess (Option #1: ${fmt(xb)})`);
     const wr = waiversOf(r), wb = waiversOf(best);
     if (kidsCovered() && wr.has('Dependents') && !wb.has('Dependents')) add(1, 'No excess for children');
     if (wr.has('DaySurgery') && !wb.has('DaySurgery')) add(1, 'No excess on day surgery');
@@ -7263,13 +7511,15 @@ function nearNote() {
   const runs = [];
   for (const n of ns) { const last = runs[runs.length - 1]; if (last && n === last[1] + 1) last[1] = n; else runs.push([n, n]); }
   const items = runs.flatMap(([a, b]) => (a === b ? [`#${a}`] : b === a + 1 ? [`#${a}`, `#${b}`] : [`#${a}–#${b}`]));
-  const txt = items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0];
+  // a short list names them; a long one just counts them (they're all in the list below)
+  const long = items.length > 4;
+  const txt = long ? `${ns.length} options between #${ns[0]} and #${ns[ns.length - 1]}` : items.length > 1 ? `${items.slice(0, -1).join(', ')} and ${items[items.length - 1]}` : items[0];
   const gap = Math.max(...nearSkipped.map((r) => r.total - lastList[0].total));
   const many = ns.length > 1;
   const allCopies = nearSkipped.every((r) => nearCopy(r, lastList[0]));
   return rankLinks(allCopies
-    ? `Option${many ? 's' : ''} ${txt} ${many ? 'are near-copies' : 'is a near-copy'} of this one: one policy different, within ${fmt(Math.max(1, gap))} a year. ${many ? "They're" : "It's"} in the list below.`
-    : `Option${many ? 's' : ''} ${txt} cost${many ? '' : 's'} up to ${fmt(Math.max(1, gap))} a year more without adding anything that matters. ${many ? "They're" : "It's"} in the list below.`);
+    ? `${long ? cap1(txt) : `Option${many ? 's' : ''} ${txt}`} ${many ? 'are near-copies' : 'is a near-copy'} of this one: one policy different, within ${fmt(Math.max(1, gap))} a year. ${many ? "They're" : "It's"} in the list below.`
+    : `${long ? cap1(txt) : `Option${many ? 's' : ''} ${txt}`} cost${many ? '' : 's'} up to ${fmt(Math.max(1, gap))} a year more without adding anything that matters. ${many ? "They're" : "It's"} in the list below.`);
 }
 // has this person (0 you, 1 partner) entered any extras services?
 const usesExtras = (i) => Object.values(S.usage?.[i] || {}).some((n) => n > 0);
@@ -7280,11 +7530,14 @@ const hasCopay = (r) => r.products.some((p) => p.h && p.cp && p.cp.type && p.cp.
 function addsOver(r, x) {
   const out = [];
   if (S.want !== 'E') {
-    const plus = Object.values(moreCoverThan(r, x)).flat(), minus = Object.values(moreCoverThan(x, r)).flat();
-    const g = new Set(plus).size - new Set(minus).size;
-    if (g > 0) { const u = [...new Set(plus)], pick = [...u.filter((c) => !MINOR_CATS.includes(c)), ...u.filter((c) => MINOR_CATS.includes(c))].slice(0, 2); out.push(`${g} more hospital categor${g === 1 ? 'y' : 'ies'} (incl. ${listCats(pick, 2)})`); }
+    const plus = [...new Set(Object.values(moreCoverThan(r, x)).flat())], minus = [...new Set(Object.values(moreCoverThan(x, r)).flat())];
+    // gains and losses named separately, so the counts match the lists everywhere else
+    if (plus.length > minus.length) {
+      const pick = [...plus.filter((c) => !MINOR_CATS.includes(c)), ...plus.filter((c) => MINOR_CATS.includes(c))].slice(0, 2);
+      out.push(`${plus.length} more hospital categor${plus.length === 1 ? 'y' : 'ies'} (${plus.length > pick.length ? 'incl. ' : ''}${listCats(pick, 2)})${minus.length ? ` but ${minus.length} fewer (${listCats(minus.slice(0, 2), 2)}${minus.length > 2 ? '…' : ''})` : ''}`);
+    }
     const xr = maxExcessOf(r), xx = maxExcessOf(x);
-    if (xr < xx && r.products.some((p) => p.h)) out.push(`a lower excess (${xr ? fmt(xr) : 'none'} instead of ${fmt(xx)})`);
+    if (xr < xx && noHigherExcess(r, x) && r.products.some((p) => p.h)) out.push(`a lower excess (${xr ? fmt(xr) : 'none'} instead of ${fmt(xx)})`);
     if (hasCopay(x) && !hasCopay(r)) out.push('no daily hospital co-payment');
     const wr = waiversOf(r), wx = waiversOf(x);
     if (kidsCovered() && wr.has('Dependents') && !wx.has('Dependents')) out.push('no excess for children');
@@ -7298,7 +7551,7 @@ function addsOver(r, x) {
     else if (xg.length) out.push(`extras that also cover ${listCats(xg.map((c) => c.toLowerCase()), 2)}`);
   }
   const fr = whatIf?.first?.get(keyOf(r)), fx = whatIf?.first?.get(keyOf(x));
-  if (!rankY1 && fr != null && fx != null && fx - fr >= 100) out.push(`${fmt(fx - fr)} less in Year 1 (fewer waiting periods)`);
+  if (!rankY1 && fr != null && fx != null && fx - fr >= 100) out.push(`costs ${fmt(fx - fr)} less in Year 1 (fewer waiting periods)`);
   return out;
 }
 // Two options that are practically the same choice: within $40 a year, the same hospital tiers,
@@ -7327,6 +7580,17 @@ function worstRank(r) {
   return Math.max(lastList.indexOf(r) + 1 || 99, whatIf.lo.get(keyOf(r))?.rank ?? 99, whatIf.hi.get(keyOf(r))?.rank ?? 99);
 }
 // Extras service groups an option pays something for (dental, optical, physio…).
+// the extras service groups someone in the household has entered services in
+function usedGroups() {
+  const out = new Set();
+  for (const u of Object.values(S.usage || {})) for (const [id, n] of Object.entries(u)) if (n > 0) { const c = CATALOGUE.find((x) => x.id === id); if (c) out.add(c.group); }
+  return out;
+}
+// how much a hospital category matters for this household: asked for or key for their age/stage = 1, other = 0.25
+function catWeight(c) {
+  if (neededByAnyone().has(c) || keyCats([c]).length) return 1;
+  return MINOR_CATS.includes(c) ? 0.15 : 0.25;
+}
 function extrasCovered(r) {
   const groups = new Set();
   for (const p of r.products) if (p.e?.svc) for (const c of CATALOGUE) {
@@ -7386,7 +7650,8 @@ function recPros(r, best, others = []) {
     const extraH = [...new Set(gainers.flatMap((i) => m[i]))];
     const names = [...new Set(gainers.map((i) => (i === 0 ? 'you' : i === 1 && gCouple() ? 'your partner' : S.kids === 1 ? 'your child' : 'your children')))];
     const forWho = names.length ? ` for ${names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}` : names[0]}` : '';
-    const extraX = S.want !== 'H' ? [...extrasCovered(r)].filter((g) => !extrasCovered(best).has(g)) : [];
+    const usedG = usedGroups();
+    const extraX = S.want !== 'H' ? [...extrasCovered(r)].filter((g) => !extrasCovered(best).has(g) && usedG.has(g)) : [];
     if (extraH.length) { const pick = [...extraH.filter((c) => !MINOR_CATS.includes(c)), ...extraH.filter((c) => MINOR_CATS.includes(c))].slice(0, 2); items.push(`${extraH.length} more hospital categor${extraH.length === 1 ? 'y' : 'ies'}${forWho} (incl. ${listCats(pick, 2)})`); }
     // better extras for a person: their services pay back clearly more under this option
     if (S.want !== 'H') {
@@ -7394,7 +7659,7 @@ function recPros(r, best, others = []) {
       const a = back(r), b = back(best);
       const who = Object.keys(a).map(Number).filter((i) => a[i] - (b[i] || 0) > 40);
       const nm = [...new Set(who.map((i) => (i === 0 ? 'you' : i === 1 && gCouple() ? 'your partner' : S.kids === 1 ? 'your child' : 'your children')))];
-      if (nm.length) items.push(`Better extras for ${nm.length > 1 ? `${nm.slice(0, -1).join(', ')} and ${nm[nm.length - 1]}` : nm[0]}`);
+      if (nm.length && (r.extras?.totalBenefit || 0) > (best.extras?.totalBenefit || 0)) items.push(`Better extras for ${nm.length > 1 ? `${nm.slice(0, -1).join(', ')} and ${nm[nm.length - 1]}` : nm[0]}`);
     }
     if (extraX.length) items.push(`Also covers ${listCats(extraX.slice(0, 4).map((x) => x.toLowerCase()), 4)}${extraX.length > 4 ? ' and more' : ''}`);
     // cheaper in its first year: fewer of your services fall in waiting periods
@@ -7533,14 +7798,14 @@ let factKeys = null; // every detail row any card shown has, so each card has th
 function factRows(r, other, vsSelf) {
   const rows = [];
   const f = whatIf?.first?.get(keyOf(r));
-  if (other && Math.abs(other.total - r.total) > 1 && r.products.some((p) => p.e)) { const d = other.total - r.total; rows.push(['pref', PREF_LABEL(), `<span class="${d < 0 ? 'save' : 'cost'}">${d < 0 ? 'Save' : 'Costs'} ${fmt(Math.abs(d))} ${d < 0 ? 'a year' : 'more a year'}</span><span class="hint wsub">not in the total above</span>`]); }
+  if (S.preferred && other && Math.abs(other.total - r.total) > 1 && r.products.some((p) => p.e)) { const d = other.total - r.total; rows.push(['pref', PREF_LABEL(), `<span class="${d < 0 ? 'save' : 'cost'}">${d < 0 ? 'Save' : 'Costs'} ${fmt(Math.abs(d))} ${d < 0 ? 'a year' : 'more a year'}</span><span class="hint wsub">not in the total above</span>`]); }
   if (S.want !== 'H' && r.extras) {
     const xp = extrasPremiumOf(r);
     if (!xp) rows.push(['xval', 'Extras', 'No extras policy: you pay for services yourself']);
     else {
       const d = r.extras.totalBenefit - xp.net;
       const pct = r.extras.totalFees ? Math.round((100 * r.extras.totalBenefit) / r.extras.totalFees) : 0;
-      rows.push(['xval', 'Extras', `<span class="save">Get back ${xp.est ? 'about ' : ''}${pct}% of the cost of your services</span><span class="hint wsub">${d >= 0 ? `pays you ${fmt(d)} more than its premium` : `pays ${fmt(-d)} less than its premium`}</span>`]);
+      rows.push(['xval', 'Extras', `<span class="${d >= 0 ? 'save' : 'cost'}">Get back ${xp.est ? 'about ' : ''}${pct}% of the cost of your services</span><span class="hint wsub">${d >= 0 ? `pays you ${fmt(d)} more than its premium` : `pays ${fmt(-d)} less than its premium`}</span>`]);
     }
   }
   {
@@ -7587,7 +7852,9 @@ function bigStatus(r, id) {
   if (ls.some((l) => l.inWait)) return { cls: 'save', t: `${fmt(back)} back of ${fmt(fee)} (the rest falls in the ${w}-month wait)` };
   const more = served && w && ls.some((l) => l.old != null && l.benefit > l.old + 0.5);
   const was = ls.reduce((t, l) => t + (l.old ?? 0), 0);
-  return { cls: back > 0 ? 'save' : 'cost', t: `${fmt(back)} back of ${fmt(fee)}${more ? ` (your current policy pays ${fmt(was)})` : ''}` };
+  const life = ls.find((l) => l.lifeLimit)?.lifeLimit;
+  const less = served && ls.some((l) => l.old != null && l.benefit < l.old - 0.5);
+  return { cls: back > 0 && !less ? 'save' : 'cost', t: `${fmt(back)} back of ${fmt(fee)}${more ? ` (your current policy pays ${fmt(was)})` : less ? ` (less than the ${fmt(was)} your current policy pays)` : ''}${life ? ` · lifetime limit ${fmt(life)} per person` : ''}` };
 }
 // what a blank row means for a card that doesn't have it
 const FACT_BLANK = { pref: 'No extra saving', first: 'None for your services' };
@@ -7596,18 +7863,28 @@ function hospWaits(r) {
   if (S.want === 'E' || !r.products.some((p) => p.h)) return [];
   const out = [], curH = currentHospitals();
   const pregNew = [0, 1].some((i) => plansPregnancy(i) && !curH.some((x) => (!x.persons || x.persons.includes(i)) && x.p.h.cats?.PregnancyBirth === 'Y'));
-  if (pregNew) out.push('Pregnancy & birth: 12\u2011month wait');
-  if (!curH.length) out.push('Hospital: 2\u2011month wait (12 for pre\u2011existing conditions)');
+  if (pregNew) out.push('Pregnancy & birth: 12\u2011month wait, served before the birth');
+  const needCats = [...new Set(Object.values(S.hospUse || {}).flatMap((u) => u.cats || []))];
+  const psychOnly = needCats.length && needCats.every((c) => PREEX_EXEMPT.includes(c));
+  let g = [];
+  if (!curH.length) out.push(`Hospital: 2\u2011month wait (${psychOnly ? 'also for pre\u2011existing psychiatric, rehab and palliative care' : '12 for pre\u2011existing conditions'})`);
   else {
-    const g = [...new Set(Object.values(gainsBy(r)).flat())].filter((c) => c !== 'PregnancyBirth');
-    if (g.length) out.push(`${g.length > 1 ? 'Added hospital categories' : HOSPITAL_CATS[g[0]] || g[0]}: 2\u2011month wait (12 for pre\u2011existing conditions)`);
+    const gained = [...new Set(Object.values(gainsBy(r)).flat())];
+    if (gained.includes('PregnancyBirth') && !pregNew && pregnancyRelevant()) out.push('Pregnancy & birth: 12\u2011month wait');
+    g = gained.filter((c) => c !== 'PregnancyBirth' && (c !== 'AssistedReproductive' || pregnancyRelevant()));
+    if (g.includes('HospitalPsychiatric') && psychWaiverApplies([0, 1])) out.push('Hospital psychiatric: no wait if you use your one\u2011off psychiatric upgrade waiver');
+    if (g.length) out.push(`${g.length > 1 ? 'Added hospital categories' : HOSPITAL_CATS[g[0]] || g[0]}: ${hospWaitText(g).replace(/^(\d+) months/, '$1\u2011month wait')}`);
   }
+  // a planned stay in cover that's new for that person waits too
+  const stayNew = Object.entries(S.hospUse || {}).some(([, u]) => u.stays > 0) && (!curH.length || g.length);
+  if (stayNew) out.push('Your planned stay: covered once the wait is served (2 months, 12 if for a pre\u2011existing condition)');
   return out;
 }
 // New waiting periods this option starts for the services entered (by service group, longest first).
 // Waits already served on current cover carry over and aren't listed.
 function waitList(r) {
-  const served = new Set(servedCategories() || []);
+  const sb = servedByPerson();
+  const servedOf = (p) => new Set(sb[p] ?? servedCategories() ?? []);
   const by = new Map();
   const n = {};
   for (const l of r.extras?.lines || []) n[`${l.person}:${l.id}`] = (n[`${l.person}:${l.id}`] || 0) + 1;
@@ -7616,7 +7893,7 @@ function waitList(r) {
     const w = Math.max(0, ...r.products.map((p) => p.e?.svc?.[l.cat]?.w || 0));
     if (!w) continue;
     // served on current cover: only a higher benefit than now has a wait (the current benefit is paid meanwhile)
-    const up = served.has(l.cat);
+    const up = servedOf(l.person).has(l.cat);
     if (up && !l.upWait && !(l.old != null && l.benefit > l.old + 0.5)) continue;
     // only waits that cost something in Year 1: a service actually falls inside the wait (as the year-1 figures count it)
     const k = n[`${l.person}:${l.id}`];
@@ -7734,12 +8011,43 @@ function renderPopt() {
 // An option with more cover than you have now (nobody loses any) that still costs less than your existing cover.
 let upPick = null;
 // "32 fewer hospital categories and a $750 excess instead of $250": what an option gives up against cover held now
+// The categories in a list that matter most for this household: ones ticked, the big ones for 50+
+// (cataracts, joint replacements, heart), pregnancy for a woman under 45, then the rest. Max 3.
+// The hospital categories a person actually asked for: ticked (or from a quick fill), not just the ones their
+// chosen level already includes.
+function neededBy(i) {
+  const u = S.hospUse?.[i];
+  if (!u) return new Set();
+  const min = new Set(meta?.tierMinimums?.[u.minTier || 'Basic'] || []);
+  return new Set((u.cats || []).filter((c) => (!min.has(c) || (c === 'PregnancyBirth' && u.preg)) && catFor(c, i)));
+}
+const neededByAnyone = () => new Set(Object.keys(S.hospUse || {}).flatMap((i) => [...neededBy(Number(i))]));
+// A short way to name a list of categories: all of them when 3 or fewer, otherwise the count and the ones that matter.
+function catsSummary(cats) {
+  if (cats.length <= 3) return listCats(cats);
+  const need = neededByAnyone();
+  const show = [...new Set([...cats.filter((c) => need.has(c)), ...keyCats(cats)])].slice(0, 3);
+  return `${cats.length} hospital categories${show.length ? ` (incl. ${listCats(show)})` : ''}`;
+}
+function keyCats(cats) {
+  const ticked = new Set(Object.values(S.hospUse || {}).flatMap((u) => u.cats || []));
+  const ages = adultAges().map(Number);
+  const older = ages.some((a) => a >= 50);
+  const pregOk = ages.some((a, i) => a < 45 && (S.gender || [])[i] === 'F');
+  const score = (c) => (ticked.has(c) && !(meta?.tierMinimums?.Basic || []).includes(c) ? 3 : 0)
+    + (older && ['Cataracts', 'JointReplacements', 'HeartVascular'].includes(c) ? 4 : 0)
+    + (pregOk && c === 'PregnancyBirth' ? 4 : 0)
+    + (['AssistedReproductive', 'PregnancyBirth', 'MiscarriageTerminationOfPregnancy', 'Gynaecology'].includes(c) && !pregOk ? -5 : 0)
+    + (c === 'MaleReproductive' && !(S.gender || []).slice(0, ages.length).includes('M') ? -5 : 0);
+  return cats.filter((c) => score(c) > 0).sort((a, b) => score(b) - score(a)).slice(0, 3);
+}
 function lessThanNow(r, cur) {
   const parts = [];
   if (S.want !== 'E' && currentHospitals().length) {
-    const n = coverDrops(r).length, xb = maxExcessOf(r), xc = maxExcessOf(cur);
-    if (n) parts.push(`${n} fewer hospital categor${n === 1 ? 'y' : 'ies'}`);
-    if (xb > xc) parts.push(`a ${fmt(xb)} excess instead of ${xc ? fmt(xc) : 'none'}`);
+    const lost = coverDrops(r), n = lost.length, key = keyCats(lost);
+    if (n) parts.push(`${n} fewer hospital categor${n === 1 ? 'y' : 'ies'}${key.length ? ` (${n > key.length ? 'incl. ' : ''}${listCats(key, 3)})` : ''}`);
+    const up = excessRise(r, cur);
+    if (up) parts.push(`a ${fmt(up.to)} excess instead of ${up.from ? fmt(up.from) : 'none'}${adultAges().length > 1 ? ` for ${up.i ? 'your partner' : 'you'}` : ''}`);
   }
   parts.push(...extrasLoss(r, cur));
   return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0] || '';
@@ -7769,7 +8077,7 @@ function extrasLoss(r, cur = curNow) {
     if (lost.length) out.push(lost.length > 1 ? 'no extras for either of you' : now.size === 1 ? 'no extras cover (you have extras now)' : `no extras for ${lost[0] === 1 ? 'your partner' : 'you'} (${lost[0] === 1 ? 'they have' : 'you have'} extras now)`);
     else { const xl = coverDelta(r, cur).xLost; if (xl.length) out.push(`extras without ${listCats(xl.map((x) => x.toLowerCase()), 3)}`); }
   }
-  if (!AMBULANCE.stateCovered.includes(S.stateCode) && hasAmbOf(cur) && !hasAmbOf(r)) out.push('no ambulance cover (your current policy has it)');
+  if (!AMBULANCE.stateCovered.includes(S.stateCode) && hasAmbOf(cur) && !hasAmbOf(r)) out.push(`no ambulance cover (your current policy has it${S.stateCode === 'VIC' ? '; an Ambulance Victoria membership would replace it' : ''})`);
   return out;
 }
 // How an option's cover compares with another's: hospital categories per person (gained / lost) and types of extras.
@@ -7785,9 +8093,23 @@ function coverDelta(r, base) {
 const joinWho = (w) => (w.length > 1 ? `${w.slice(0, -1).join(', ')} and ${w[w.length - 1]}` : w[0]);
 // Better than your existing cover in every way that counts (adds cover, nobody loses any)
 // highest excess across an option's hospital policies (what one admission could cost)
-const maxExcessOf = (r) => Math.max(0, ...r.products.filter((p) => p.h).map(headlineExcess));
-// an upgrade: more cover, nothing lost, and no higher excess than now
-const isUpgradeOn = (r, cur) => { const d = coverDelta(r, cur); return d.lost === 0 && d.xLost.length === 0 && !extrasLoss(r, cur).length && (d.gain > 0 || d.xGain.length > 0) && maxExcessOf(r) <= maxExcessOf(cur); };
+// what one hospital stay can cost: the excess plus any daily co-payment (the highest across policies)
+const stayCapOf = (p) => headlineExcess(p) + coPayCap(p);
+const maxExcessOf = (r) => Math.max(0, ...r.products.filter((p) => p.h).map(stayCapOf));
+// one person's excess (+ co-payment) on an option; separate policies are looked up per partner
+function excessFor(r, i) {
+  const hp = r.split ? r.split[i]?.products.find((p) => p.h) : r.products.find((p) => p.h);
+  return hp ? stayCapOf(hp) : Infinity;
+}
+// no adult's excess goes up compared with another option (or the current cover)
+const noHigherExcess = (r, x) => adultAges().every((_, i) => excessFor(r, i) <= excessFor(x, i));
+// the first adult whose excess goes up, for the trade-off text
+function excessRise(r, x) {
+  for (let i = 0; i < adultAges().length; i++) { const a = excessFor(r, i), b = excessFor(x, i); if (a > b && a !== Infinity) return { i, from: b === Infinity ? 0 : b, to: a }; }
+  return null;
+}
+// an upgrade: more cover, nothing lost, and no higher excess than now for anyone
+const isUpgradeOn = (r, cur) => { const d = coverDelta(r, cur); return d.lost === 0 && d.xLost.length === 0 && !extrasLoss(r, cur).length && (d.gain > 0 || d.xGain.length > 0) && noHigherExcess(r, cur); };
 // The Upgrade card: more cover than you have now (nobody loses any), clearly more than the Cheapest and Recommended
 // cards too, and still cheaper than your existing cover.
 function pickUpgrade(list, cur, refs) {
@@ -7799,7 +8121,7 @@ function pickUpgrade(list, cur, refs) {
   const stepUp = (r, x) => {
     const d = coverDelta(r, x);
     if (!hospOn) return d.xLost.length === 0 && d.xGain.length > 0 ? d.xGain.length : 0;
-    return d.lost === 0 && d.gain > 0 && maxExcessOf(r) <= maxExcessOf(x) ? d.gain : 0;
+    return d.lost === 0 && d.gain > 0 && noHigherExcess(r, x) ? d.gain : 0;
   };
   let best = null;
   for (const r of list.slice(0, 250)) {
